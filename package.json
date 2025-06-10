@@ -1,10 +1,45 @@
 {
   "name": "@arkts/sdk-downloader",
+  "version": "0.1.0",
   "description": "Download and extract the ArkTS SDK.",
+  "author": "Naily Zero <zero@naily.cc>",
+  "license": "MIT",
+  "homepage": "https://github.com/groupguanfang/arkts-sdk-downloader#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/groupguanfang/arkts-sdk-downloader.git"
+  },
+  "bugs": {
+    "url": "https://github.com/groupguanfang/arkts-sdk-downloader/issues"
+  },
+  "keywords": [
+    "arkts",
+    "sdk",
+    "downloader",
+    "openharmony"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "vitest --ui --coverage",
     "build": "tsdown",
-    "release": "release-it"
+    "lint": "eslint .",
+    "release": "release-it",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "alien-signals": "^2.0.5",
@@ -16,6 +51,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.14.1",
+    "@changesets/cli": "^2.29.4",
     "@types/cli-progress": "^3.11.6",
     "@types/node": "^22.15.30",
     "@types/progress-stream": "^2.0.5",

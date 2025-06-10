@@ -19,45 +19,45 @@ export interface DownloadStream extends Stream {
  */
 class UnifiedProgressManager {
   private downloadWeight = 0.7 // 下载占总进度的 70%
-  private extractWeight = 0.3   // 解压占总进度的 30%
-  
+  private extractWeight = 0.3 // 解压占总进度的 30%
+
   private downloadCompleted = false
   private lastDownloadProgress: any = null
-  
+
   private totalSize: number
   private onProgressCallback?: (progress: any) => void
-  
+
   constructor(totalSize: number, onProgress?: (progress: any) => void) {
     this.totalSize = totalSize
     this.onProgressCallback = onProgress
   }
-  
-  updateDownloadProgress(progressData: any) {
+
+  updateDownloadProgress(progressData: any): void {
     // 将下载进度映射到 0-70% 范围
     const scaledPercentage = (progressData.percentage || 0) * this.downloadWeight
-    
+
     const scaledProgress = {
       ...progressData,
       percentage: scaledPercentage,
     }
-    
+
     this.lastDownloadProgress = scaledProgress
     this.emitProgress(scaledProgress)
   }
-  
-  markDownloadComplete() {
+
+  markDownloadComplete(): void {
     this.downloadCompleted = true
   }
-  
-  updateExtractProgress(current: number, total: number) {
+
+  updateExtractProgress(current: number, total: number): void {
     if (!this.downloadCompleted) {
       this.downloadCompleted = true
     }
-    
+
     // 解压进度从 70% 开始，增加到 100%
     const extractPercentage = total > 0 ? (current / total) * 100 : 0
     const totalPercentage = this.downloadWeight * 100 + (extractPercentage * this.extractWeight)
-    
+
     // 基于最后的下载进度数据创建解压进度数据
     const baseProgress = this.lastDownloadProgress || {
       transferred: this.totalSize * this.downloadWeight,
@@ -68,9 +68,9 @@ class UnifiedProgressManager {
       delta: 0,
       speed: 0,
       network: 0,
-      unit: 'KB' as const
+      unit: 'KB' as const,
     }
-    
+
     const extractProgress = {
       ...baseProgress,
       percentage: Math.min(totalPercentage, 100),
@@ -80,11 +80,11 @@ class UnifiedProgressManager {
       speed: 0, // 解压阶段没有网络速度
       network: 0,
     }
-    
+
     this.emitProgress(extractProgress)
   }
-  
-  private emitProgress(progressData: any) {
+
+  private emitProgress(progressData: any): void {
     this.onProgressCallback?.(progressData)
   }
 }
@@ -94,7 +94,7 @@ class UnifiedProgressManager {
  */
 function createTarUnzipStream<T extends Stream = DownloadStream>(
   options: ResolvedDownloadOptions,
-  progressManager?: UnifiedProgressManager
+  progressManager?: UnifiedProgressManager,
 ): T {
   const extractedCount = signal(0)
   const totalEntries = signal(0)
@@ -119,10 +119,10 @@ function createTarUnzipStream<T extends Stream = DownloadStream>(
         .on('close', () => {
           const current = extractedCount() + 1
           const total = totalEntries()
-          
+
           options.onZipExtracted?.(entry as unknown as tar.ReadEntry, total, current)
           extractedCount(current)
-          
+
           // 更新统一进度
           progressManager?.updateExtractProgress(current, total)
         })
@@ -244,7 +244,7 @@ export async function download(options: DownloadOptions): Promise<void> {
       // 处理下载完成
       const handleDownloadComplete = (): void => {
         writeStream.end()
-        
+
         // 标记下载阶段完成
         progressManager.markDownloadComplete()
 

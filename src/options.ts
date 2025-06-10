@@ -113,7 +113,7 @@ export function getExistingFileSize(filePath: string): number {
  * 准备断点续传的选项
  */
 export function prepareResumeOptions(options: DownloadOptions): { startByte: number, tempFilePath: string } {
-  const tempFilePath = options.tempFilePath || path.join(options.cacheDir, 'download.tmp')
+  const tempFilePath = options.tempFilePath || path.join(options.cacheDir, `download.tmp`)
   let startByte = options.startByte || 0
 
   if (options.resumeDownload && !options.startByte) {
