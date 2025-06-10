@@ -1,0 +1,31 @@
+{
+  "name": "@arkts/sdk-downloader",
+  "description": "Download and extract the ArkTS SDK.",
+  "scripts": {
+    "test": "vitest --ui --coverage",
+    "build": "tsdown",
+    "release": "release-it"
+  },
+  "dependencies": {
+    "alien-signals": "^2.0.5",
+    "progress-stream": "^2.0.0",
+    "release-it": "^19.0.3",
+    "tar": "^7.4.3",
+    "tar-stream": "^3.1.7",
+    "unzipper": "^0.12.3"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.14.1",
+    "@types/cli-progress": "^3.11.6",
+    "@types/node": "^22.15.30",
+    "@types/progress-stream": "^2.0.5",
+    "@types/tar-stream": "^3.1.4",
+    "@types/unzipper": "^0.10.11",
+    "@vitest/coverage-v8": "^3.2.2",
+    "@vitest/ui": "^3.2.2",
+    "cli-progress": "^3.12.0",
+    "tsdown": "^0.12.7",
+    "tsx": "^4.19.4",
+    "vitest": "^3.2.2"
+  }
+}
