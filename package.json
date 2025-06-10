@@ -38,13 +38,11 @@
     "test": "vitest --ui --coverage",
     "build": "tsdown",
     "lint": "eslint .",
-    "release": "release-it",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "alien-signals": "^2.0.5",
     "progress-stream": "^2.0.0",
-    "release-it": "^19.0.3",
     "tar": "^7.4.3",
     "tar-stream": "^3.1.7",
     "unzipper": "^0.12.3"
