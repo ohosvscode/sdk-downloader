@@ -12,7 +12,7 @@ export const basicDownload = download({
   targetDir: 'target',
   resumeDownload: true,
   onProgress: (e) => {
-    console.warn(`下载进度: ${e.percentage}% ${e.network}${e.unit}`)
+    console.warn(`下载进度: ${e.percentage}% ${e.network}${e.unit}, increment: ${e.increment}`)
   },
   onTarExtracted: (entry) => {
     console.warn(`解压TAR文件完成: ${entry.path}`)
