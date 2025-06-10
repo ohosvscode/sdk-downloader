@@ -47,6 +47,12 @@ export interface DownloadOptions {
    */
   targetDir: string
   /**
+   * Whether to clean the cache directory after the download is complete.
+   *
+   * @default true
+   */
+  clean?: boolean
+  /**
    * The type of request to use.
    */
   requestType?: 'http' | 'https'

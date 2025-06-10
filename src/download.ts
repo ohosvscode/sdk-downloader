@@ -260,15 +260,19 @@ export async function download(options: DownloadOptions): Promise<void> {
           // 开始解压，传入统一进度管理器
           const extractStream = fs.createReadStream(finalTarPath)
           const combinedStream = createTarUnzipStream<Stream.Writable>(resolvedOptions, progressManager)
-
-          combinedStream.on('complete', () => {
-            // 清理临时文件
-            if (fs.existsSync(finalTarPath)) {
-              fs.unlinkSync(finalTarPath)
-            }
-            options.onComplete?.()
-            resolve()
-          })
+            .on('complete', () => {
+              // 清理临时文件
+              if (resolvedOptions.clean !== false) {
+                if (fs.existsSync(finalTarPath)) {
+                  fs.rmSync(finalTarPath, { recursive: true })
+                }
+                if (fs.existsSync(resolvedOptions.tempFilePath)) {
+                  fs.unlinkSync(resolvedOptions.tempFilePath)
+                }
+              }
+              options.onComplete?.()
+              resolve()
+            })
           combinedStream.on('error', error => reject(new DownloadError(DownloadError.Code.DownloadFailed, { cause: error })))
           extractStream.pipe(combinedStream)
         }
