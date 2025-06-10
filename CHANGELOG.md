@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.5
+
+### Patch Changes
+
+- feat: add increment option
+
 ## 0.1.4
 
 ### Patch Changes

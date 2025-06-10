@@ -23,25 +23,38 @@ class UnifiedProgressManager {
 
   private downloadCompleted = false
   private lastDownloadProgress: any = null
+  private lastPercentage = 0 // 追踪上一次的百分比
 
   private totalSize: number
+  private initialStartByte: number
   private onProgressCallback?: (progress: any) => void
 
-  constructor(totalSize: number, onProgress?: (progress: any) => void) {
+  constructor(totalSize: number, initialStartByte: number = 0, onProgress?: (progress: any) => void) {
     this.totalSize = totalSize
+    this.initialStartByte = initialStartByte
     this.onProgressCallback = onProgress
+
+    // 如果是断点续传，初始化 lastPercentage
+    if (initialStartByte > 0) {
+      this.lastPercentage = ((initialStartByte / totalSize) * 100) * this.downloadWeight
+    }
   }
 
   updateDownloadProgress(progressData: any): void {
     // 将下载进度映射到 0-70% 范围
     const scaledPercentage = (progressData.percentage || 0) * this.downloadWeight
 
+    // 计算增量，保留两位小数
+    const increment = Math.round((scaledPercentage - this.lastPercentage) * 100) / 100
+
     const scaledProgress = {
       ...progressData,
-      percentage: scaledPercentage,
+      percentage: Math.round(scaledPercentage * 100) / 100,
+      increment,
     }
 
     this.lastDownloadProgress = scaledProgress
+    this.lastPercentage = Math.round(scaledPercentage * 100) / 100
     this.emitProgress(scaledProgress)
   }
 
@@ -57,6 +70,10 @@ class UnifiedProgressManager {
     // 解压进度从 70% 开始，增加到 100%
     const extractPercentage = total > 0 ? (current / total) * 100 : 0
     const totalPercentage = this.downloadWeight * 100 + (extractPercentage * this.extractWeight)
+    const clampedPercentage = Math.min(totalPercentage, 100)
+
+    // 计算增量，保留两位小数
+    const increment = Math.round((clampedPercentage - this.lastPercentage) * 100) / 100
 
     // 基于最后的下载进度数据创建解压进度数据
     const baseProgress = this.lastDownloadProgress || {
@@ -73,14 +90,16 @@ class UnifiedProgressManager {
 
     const extractProgress = {
       ...baseProgress,
-      percentage: Math.min(totalPercentage, 100),
-      transferred: Math.floor((totalPercentage / 100) * this.totalSize),
-      remaining: Math.max(0, this.totalSize - Math.floor((totalPercentage / 100) * this.totalSize)),
+      percentage: Math.round(clampedPercentage * 100) / 100,
+      increment,
+      transferred: Math.floor((clampedPercentage / 100) * this.totalSize),
+      remaining: Math.max(0, this.totalSize - Math.floor((clampedPercentage / 100) * this.totalSize)),
       eta: 0, // 解压阶段 ETA 较难预估
       speed: 0, // 解压阶段没有网络速度
       network: 0,
     }
 
+    this.lastPercentage = Math.round(clampedPercentage * 100) / 100
     this.emitProgress(extractProgress)
   }
 
@@ -186,7 +205,7 @@ export async function download(options: DownloadOptions): Promise<void> {
       const totalSize = finalStartByte > 0 ? finalStartByte + contentLength : contentLength
 
       // 创建统一进度管理器
-      const progressManager = new UnifiedProgressManager(totalSize, options.onProgress)
+      const progressManager = new UnifiedProgressManager(totalSize, finalStartByte, options.onProgress)
 
       // 创建写入流，支持追加模式（用于断点续传）
       const writeStream = fs.createWriteStream(resolvedOptions.tempFilePath, {
@@ -228,6 +247,7 @@ export async function download(options: DownloadOptions): Promise<void> {
           ...progress,
           network,
           unit,
+          increment: 0, // 这里初始化为0，实际的increment会在UnifiedProgressManager中计算
         }
 
         // 使用统一进度管理器更新下载进度

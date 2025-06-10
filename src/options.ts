@@ -31,6 +31,10 @@ export interface DownloadProgressEvent extends progress.Progress {
    * The unit of the network speed.
    */
   unit: 'KB' | 'MB'
+  /**
+   * The increment of the {@linkcode DownloadProgressEvent.percentage}.
+   */
+  increment: number
 }
 
 export interface DownloadOptions {
