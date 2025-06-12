@@ -139,7 +139,10 @@ export async function download(options: DownloadOptions): Promise<void> {
   const resolvedOptions = resolveDownloadOptions(options)
 
   const startByte = computed<number>(() => fs.existsSync(resolvedOptions.tempFilePath) ? fs.statSync(resolvedOptions.tempFilePath).size : 0)
-  const res = await makeRequest(resolvedOptions, startByte())
+  const res = await makeRequest(resolvedOptions, startByte(), {
+    signal: resolvedOptions.signal,
+    ...resolvedOptions.requestOptions,
+  })
   const totalLength = computed<number>(() => (Number(res.headers['content-length']) || 0) + startByte())
   const downloadProgressStream = progress({ length: totalLength(), transferred: startByte() })
   const progressHandler = useDownloadProgress()

@@ -61,9 +61,13 @@ export interface DownloadOptions {
    */
   requestType?: 'http' | 'https'
   /**
-   * The start byte of the download. If not specified, the download will start from the beginning.
+   * The signal to abort the download.
    */
-  startByte?: number
+  signal?: AbortSignal
+  /**
+   * The extra options to pass to the request.
+   */
+  requestOptions?: import('node:https').RequestOptions
   /**
    * Whether to enable resume download. If enabled, the download will automatically resume from where it left off.
    *

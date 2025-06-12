@@ -3,7 +3,7 @@ import type { ResolvedDownloadOptions } from './options'
 import { Buffer } from 'node:buffer'
 import { DownloadError } from './errors/download'
 
-export function makeRequest(resolvedOptions: ResolvedDownloadOptions, startByte?: number): Promise<http.IncomingMessage> {
+export function makeRequest(resolvedOptions: ResolvedDownloadOptions, startByte?: number, extraOptions?: http.RequestOptions): Promise<http.IncomingMessage> {
   return new Promise<http.IncomingMessage>((resolve, reject) => {
     resolvedOptions.requester.get(resolvedOptions.url, {
       method: 'GET',
@@ -12,6 +12,7 @@ export function makeRequest(resolvedOptions: ResolvedDownloadOptions, startByte?
             Range: `bytes=${startByte}-`,
           }
         : undefined,
+      ...extraOptions,
     }, (res) => {
       if (res.statusCode === 416 || res.statusCode === 206) {
         resolve(res)
