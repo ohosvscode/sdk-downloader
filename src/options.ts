@@ -66,10 +66,12 @@ export interface DownloadOptions {
   startByte?: number
   /**
    * Whether to enable resume download. If enabled, the download will automatically resume from where it left off.
+   *
+   * @default true
    */
   resumeDownload?: boolean
   /**
-   * The temporary file path for storing partial downloads. If not specified, will use tarCacheDir + '.tmp'.
+   * The temporary file path for storing partial downloads. If not specified, will use tarCacheDir + 'download.tmp.tar.gz'.
    */
   tempFilePath?: string
   /**
@@ -77,20 +79,19 @@ export interface DownloadOptions {
    *
    * @param e - The progress event.
    */
-  onProgress?(e: DownloadProgressEvent): void | Promise<void>
+  onDownloadProgress?(e: DownloadProgressEvent): void | Promise<void>
   /**
    * The callback function to be called when the tar file is extracted.
    *
    * @param entry - The entry of the tar file.
    */
-  onTarExtracted?(entry: tar.ReadEntry): void | Promise<void>
+  onTarExtracted?(entry: tar.WriteEntry): void | Promise<void>
   /**
    * The callback function to be called when the zip file is extracted.
    *
    * @param entry - The entry of the zip file.
-   * @param total - The total number of entries.
    */
-  onZipExtracted?(entry: tar.ReadEntry, total: number, current: number): void | Promise<void>
+  onZipExtracted?(entry: import('unzipper').Entry): void | Promise<void>
   /**
    * The callback function to be called when the download is complete.
    */
@@ -103,168 +104,25 @@ export type ResolvedDownloadOptions = Omit<DownloadOptions, 'url'> & {
   tempFilePath: string
 }
 
-/**
- * 检查临时文件大小，用于断点续传
- */
-export function getExistingFileSize(filePath: string): number {
-  try {
-    if (fs.existsSync(filePath)) {
-      const stats = fs.statSync(filePath)
-      return stats.size
-    }
-    return 0
-  }
-  catch {
-    return 0
-  }
-}
-
-/**
- * 准备断点续传的选项
- */
-export function prepareResumeOptions(options: DownloadOptions): { startByte: number, tempFilePath: string } {
-  const tempFilePath = options.tempFilePath || path.join(options.cacheDir, `download.tmp`)
-  let startByte = options.startByte || 0
-
-  if (options.resumeDownload && !options.startByte) {
-    // 自动检测已下载的文件大小
-    startByte = getExistingFileSize(tempFilePath)
-  }
-
-  return { startByte, tempFilePath }
-}
-
-export async function resolveDownloadOptions(options: DownloadOptions): Promise<ResolvedDownloadOptions> {
+export function resolveDownloadOptions(options: DownloadOptions): ResolvedDownloadOptions {
   const url = typeof options.url === 'string' ? options.url : getSdkUrl(options.url.version, options.url.arch, options.url.os)
-  if (!url) {
-    throw new DownloadError(DownloadError.Code.DownloadFailed, {
-      message: `Unsupported URL: ${JSON.stringify(options.url)}`,
-    })
-  }
+  if (!url)
+    throw new DownloadError(DownloadError.Code.InvalidUrl)
 
-  const { startByte, tempFilePath } = prepareResumeOptions(options)
+  if (!fs.existsSync(options.cacheDir))
+    fs.mkdirSync(options.cacheDir, { recursive: true })
+
+  options.tempFilePath = options.tempFilePath ? path.resolve(options.tempFilePath) : path.resolve(path.join(options.cacheDir, 'download.tmp.tar.gz'))
+
+  if (!fs.existsSync(path.dirname(options.tempFilePath)))
+    fs.mkdirSync(path.dirname(options.tempFilePath), { recursive: true })
 
   return {
     ...options,
     url,
-    startByte,
-    tempFilePath,
     requester: options.requestType === 'http' ? http : https,
-  }
-}
-
-export async function resolveRequestOptions(options: ResolvedDownloadOptions): Promise<import('node:https').RequestOptions | import('node:http').RequestOptions> {
-  const url = new URL(options.url)
-
-  return {
-    headers: options.startByte
-      ? {
-          Range: `bytes=${options.startByte}-`,
-        }
-      : undefined,
-    method: 'GET',
-    hostname: url.hostname,
-    path: url.pathname,
-    port: url.port,
-    agent: false,
-    rejectUnauthorized: true,
-    servername: url.hostname,
-  }
-}
-
-/**
- * 智能断点续传管理器
- * 用于自动处理断点续传的各种情况
- */
-export class ResumeManager {
-  private tempFilePath: string
-  private maxRetries: number
-  private retryCount: number = 0
-
-  constructor(tempFilePath: string, maxRetries: number = 3) {
-    this.tempFilePath = tempFilePath
-    this.maxRetries = maxRetries
-  }
-
-  /**
-   * 获取应该开始下载的字节位置
-   */
-  getStartByte(): number {
-    return getExistingFileSize(this.tempFilePath)
-  }
-
-  /**
-   * 检查是否应该重试下载
-   */
-  shouldRetry(): boolean {
-    return this.retryCount < this.maxRetries
-  }
-
-  /**
-   * 记录一次重试
-   */
-  recordRetry(): void {
-    this.retryCount++
-  }
-
-  /**
-   * 重置重试计数
-   */
-  resetRetries(): void {
-    this.retryCount = 0
-  }
-
-  /**
-   * 清理临时文件
-   */
-  cleanup(): void {
-    try {
-      if (fs.existsSync(this.tempFilePath)) {
-        fs.unlinkSync(this.tempFilePath)
-      }
-    }
-    catch {
-      // 忽略清理错误
-    }
-  }
-
-  /**
-   * 验证文件完整性（可选的校验和验证）
-   */
-  validateFile(expectedSize?: number): boolean {
-    try {
-      if (!fs.existsSync(this.tempFilePath)) {
-        return false
-      }
-
-      const stats = fs.statSync(this.tempFilePath)
-
-      if (expectedSize && stats.size !== expectedSize) {
-        return false
-      }
-
-      return true
-    }
-    catch {
-      return false
-    }
-  }
-}
-
-/**
- * 创建智能断点续传下载选项
- */
-export function createResumeDownloadOptions(
-  baseOptions: DownloadOptions,
-  resumeManager?: ResumeManager,
-): DownloadOptions {
-  const tempFilePath = baseOptions.tempFilePath || path.join(baseOptions.cacheDir, 'download.tmp')
-  const manager = resumeManager || new ResumeManager(tempFilePath)
-
-  return {
-    ...baseOptions,
-    resumeDownload: true,
-    tempFilePath,
-    startByte: baseOptions.startByte || manager.getStartByte(),
+    tempFilePath: options.tempFilePath,
+    targetDir: path.resolve(options.targetDir),
+    resumeDownload: typeof options.resumeDownload === 'boolean' ? options.resumeDownload : true,
   }
 }

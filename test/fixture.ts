@@ -11,13 +11,13 @@ export const basicDownload = download({
   cacheDir: 'target/.cache',
   targetDir: 'target',
   resumeDownload: true,
-  onProgress: (e) => {
+  onDownloadProgress: (e) => {
     console.warn(`下载进度: ${e.percentage}% ${e.network}${e.unit}, increment: ${e.increment}`)
   },
   onTarExtracted: (entry) => {
     console.warn(`解压TAR文件完成: ${entry.path}`)
   },
-  onZipExtracted: (entry, total, current) => {
-    console.warn(`解压ZIP文件完成: ${entry.path} ${current}/${total}`)
+  onZipExtracted: (entry) => {
+    console.warn(`解压ZIP文件完成: ${entry.path}`)
   },
 }) as Promise<void>

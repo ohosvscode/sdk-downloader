@@ -14,5 +14,7 @@ export namespace DownloadError {
   export enum Code {
     DownloadFailed = 'DOWNLOAD_FAILED',
     ZipExtractionFailed = 'ZIP_EXTRACTION_FAILED',
+    InvalidUrl = 'INVALID_URL',
+    Sha256Mismatch = 'SHA256_MISMATCH',
   }
 }
