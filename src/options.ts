@@ -85,7 +85,7 @@ export interface DownloadOptions {
    *
    * @param entry - The entry of the tar file.
    */
-  onTarExtracted?(entry: tar.WriteEntry): void | Promise<void>
+  onTarExtracted?(entry: tar.ReadEntry): void | Promise<void>
   /**
    * The callback function to be called when the zip file is extracted.
    *

@@ -96,7 +96,7 @@ async function extractTar(resolvedOptions: ResolvedDownloadOptions, extractedDir
   await tar.extract({
     file: resolvedOptions.tempFilePath,
     cwd: extractedDir,
-    onWriteEntry: entry => resolvedOptions.onTarExtracted?.(entry),
+    onReadEntry: entry => resolvedOptions.onTarExtracted?.(entry),
   })
 }
 
@@ -168,4 +168,8 @@ export async function download(options: DownloadOptions): Promise<void> {
     fs.mkdirSync(extractedDir, { recursive: true })
   await extractTar(resolvedOptions, extractedDir)
   await extractZip(resolvedOptions, extractedDir)
+  if (resolvedOptions.clean !== false) {
+    fs.rmSync(resolvedOptions.tempFilePath, { recursive: true })
+    fs.rmSync(resolvedOptions.cacheDir, { recursive: true })
+  }
 }
