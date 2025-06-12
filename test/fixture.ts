@@ -5,7 +5,7 @@ import { download } from '../src'
 export const basicDownload = download({
   url: {
     os: SdkOS.MacOS,
-    version: SdkVersion.API15,
+    version: SdkVersion.API10,
     arch: SdkArch.ARM,
   },
   cacheDir: 'target/.cache',

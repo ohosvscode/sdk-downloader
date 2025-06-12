@@ -116,8 +116,7 @@ const urls: SdkUrlStorage = {
  * @returns The URL of the SDK.
  */
 export function getSdkUrl(version: SdkVersion, arch: SdkArch, os: SdkOS): string | null {
-  const url = urls[version]
-  return ((url?.[arch] as any)?.[os]) ?? null
+  return urls?.[version]?.[arch]?.[os] ?? null
 }
 
 /**
