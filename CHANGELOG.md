@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.13
+
+### Patch Changes
+
+- d535c04: feat: add cancelable support
+
 ## 0.1.12
 
 ### Patch Changes
