@@ -100,7 +100,7 @@ export interface DownloadOptions {
 }
 
 export interface DownloadExecutor extends Emitter<DownloadEventMap> {
-  startDownload(): Promise<void>
+  startDownload(requestOptions?: import('node:https').RequestOptions): Promise<void>
   checkSha256(): Promise<void>
   extractTar(): Promise<void>
   extractZip(): Promise<void>

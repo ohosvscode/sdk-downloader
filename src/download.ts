@@ -143,11 +143,12 @@ export async function createDownloader(options: DownloadOptions): Promise<Downlo
   const resolvedOptions = resolveDownloadOptions(options)
   const emitter = mitt<DownloadEventMap>()
 
-  async function startDownload(): Promise<void> {
+  async function startDownload(requestOptions?: import('node:https').RequestOptions): Promise<void> {
     const startByte = computed<number>(() => fs.existsSync(resolvedOptions.tempFilePath) ? fs.statSync(resolvedOptions.tempFilePath).size : 0)
     const res = await makeRequest(resolvedOptions, startByte(), {
       signal: resolvedOptions.signal,
       ...resolvedOptions.requestOptions,
+      ...requestOptions,
     })
     const totalLength = computed<number>(() => (Number(res.headers['content-length']) || 0) + startByte())
     const downloadProgressStream = progress({ length: totalLength(), transferred: startByte() })
