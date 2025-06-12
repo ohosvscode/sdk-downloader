@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.11
+
+### Patch Changes
+
+- fix: test
+
 ## 0.1.10
 
 ### Patch Changes
