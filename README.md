@@ -9,6 +9,7 @@ Simple function to download the ArkTS SDK, streaming, simple, easy to use, and s
 - 🧵 HTTP/HTTPS support ✅
 - 🔗 Support cancel download ✅
 - 🧹 Clean the cache directory after the download is complete ✨
+- 👂 Support listen events when download, tar extract and zip extract
 
 ## Install 📦
 
