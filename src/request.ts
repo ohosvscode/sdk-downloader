@@ -26,9 +26,9 @@ export function makeRequest(resolvedOptions: ResolvedDownloadOptions, startByte?
   })
 }
 
-export function makeSha256Request(url: string, resolvedOptions: ResolvedDownloadOptions): Promise<string> {
+export function makeSha256Request(resolvedOptions: ResolvedDownloadOptions): Promise<string> {
   return new Promise((resolve, reject) => {
-    resolvedOptions.requester.get(url || `${resolvedOptions.url}.sha256`, (res) => {
+    resolvedOptions.requester.get(`${resolvedOptions.url}.sha256`, (res) => {
       if (res.statusCode !== 200 && res.statusCode !== 201)
         reject(new DownloadError(DownloadError.Code.DownloadFailed, { cause: res.statusCode }))
 
