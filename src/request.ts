@@ -26,7 +26,7 @@ export function makeRequest(resolvedOptions: ResolvedDownloadOptions, startByte?
         resolve(res)
       }
       else if (res.statusCode !== 200) {
-        reject(new DownloadError(DownloadError.Code.DownloadFailed, { cause: res.statusCode }))
+        reject(new DownloadError(DownloadError.Code.DownloadFailed, { cause: res }))
       }
       else {
         resolve(res)

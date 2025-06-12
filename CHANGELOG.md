@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.8
+
+### Patch Changes
+
+- feat: update error
+
 ## 0.1.7
 
 ### Patch Changes
