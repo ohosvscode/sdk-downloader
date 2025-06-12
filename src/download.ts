@@ -159,7 +159,7 @@ export async function download(options: DownloadOptions): Promise<void> {
     await onDownloaded(writeStream, res)
   }
 
-  const sha256 = await makeSha256Request(resolvedOptions.url, resolvedOptions)
+  const sha256 = await makeSha256Request(resolvedOptions)
   await checkSha256(resolvedOptions.tempFilePath, sha256)
 
   const extractedDir = path.join(resolvedOptions.cacheDir, '.tar-extracted')
