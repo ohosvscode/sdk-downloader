@@ -1,3 +1,4 @@
+import type { Emitter } from 'mitt'
 import type progress from 'progress-stream'
 import type * as tar from 'tar'
 import fs from 'node:fs'
@@ -96,10 +97,21 @@ export interface DownloadOptions {
    * @param entry - The entry of the zip file.
    */
   onZipExtracted?(entry: import('unzipper').Entry): void | Promise<void>
-  /**
-   * The callback function to be called when the download is complete.
-   */
-  onComplete?(): void | Promise<void>
+}
+
+export interface DownloadExecutor extends Emitter<DownloadEventMap> {
+  startDownload(): Promise<void>
+  checkSha256(): Promise<void>
+  extractTar(): Promise<void>
+  extractZip(): Promise<void>
+  clean(): Promise<void>
+}
+
+// eslint-disable-next-line ts/consistent-type-definitions
+export type DownloadEventMap = {
+  'download-progress': DownloadProgressEvent
+  'tar-extracted': tar.ReadEntry
+  'zip-extracted': import('unzipper').Entry
 }
 
 export type ResolvedDownloadOptions = Omit<DownloadOptions, 'url'> & {

@@ -2,7 +2,7 @@ import { SdkArch, SdkOS, SdkVersion } from '../src'
 import { download } from '../src'
 
 // 基本下载示例
-export const basicDownload = download({
+download({
   url: {
     os: SdkOS.MacOS,
     version: SdkVersion.API10,
@@ -20,4 +20,4 @@ export const basicDownload = download({
   onZipExtracted: (entry) => {
     console.warn(`解压ZIP文件完成: ${entry.path}`)
   },
-}) as Promise<void>
+})

@@ -1,9 +1,11 @@
-import type { ResolvedDownloadOptions } from './options'
+import type { Emitter } from 'mitt'
+import type { DownloadEventMap, DownloadExecutor, DownloadProgressEvent, ResolvedDownloadOptions } from './options'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { computed } from 'alien-signals'
 import fg from 'fast-glob'
+import mitt from 'mitt'
 import progress from 'progress-stream'
 import * as tar from 'tar'
 import * as unzipper from 'unzipper'
@@ -81,7 +83,7 @@ async function onDownloaded(writeStream: fs.WriteStream, res: import('node:http'
   })
 }
 
-async function checkSha256(filePath: string, sha256: string): Promise<void> {
+async function _checkSha256(filePath: string, sha256: string): Promise<void> {
   const fileBuffer = fs.readFileSync(filePath)
   const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex').trim()
   sha256 = sha256.trim()
@@ -92,21 +94,22 @@ async function checkSha256(filePath: string, sha256: string): Promise<void> {
   }
 }
 
-async function extractTar(resolvedOptions: ResolvedDownloadOptions, extractedDir: string): Promise<void> {
+async function _extractTar(resolvedOptions: ResolvedDownloadOptions, extractedDir: string, emitter: Emitter<DownloadEventMap>): Promise<void> {
   await tar.extract({
     file: resolvedOptions.tempFilePath,
     cwd: extractedDir,
-    onReadEntry: entry => resolvedOptions.onTarExtracted?.(entry),
+    onReadEntry: (entry) => {
+      resolvedOptions.onTarExtracted?.(entry)
+      emitter.emit('tar-extracted', entry)
+    },
   })
 }
 
-async function extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDir: string): Promise<void> {
+async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDir: string, emitter: Emitter<DownloadEventMap>): Promise<void> {
   const files = fg.sync(path.join(extractedDir, '**', '*.zip'), {
     onlyFiles: true,
     absolute: true,
   }).filter(file => file.endsWith('.zip'))
-
-  console.warn('files', files)
 
   async function extractSingleZip(filePath: string): Promise<void> {
     const fileReadStream = fs.createReadStream(filePath).pipe(unzipper.Parse({ forceStream: true }))
@@ -119,6 +122,7 @@ async function extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDir
           fs.mkdirSync(path.dirname(currentFilePath), { recursive: true })
         entry.pipe(fs.createWriteStream(currentFilePath))
         await resolvedOptions.onZipExtracted?.(entry)
+        emitter.emit('zip-extracted', entry)
       }
       else if (entry.type === 'Directory') {
         if (!fs.existsSync(currentFilePath))
@@ -135,43 +139,81 @@ async function extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDir
  *
  * @param options - The options for the download.
  */
-export async function download(options: DownloadOptions): Promise<void> {
+export async function createDownloader(options: DownloadOptions): Promise<DownloadExecutor> {
   const resolvedOptions = resolveDownloadOptions(options)
+  const emitter = mitt<DownloadEventMap>()
 
-  const startByte = computed<number>(() => fs.existsSync(resolvedOptions.tempFilePath) ? fs.statSync(resolvedOptions.tempFilePath).size : 0)
-  const res = await makeRequest(resolvedOptions, startByte(), {
-    signal: resolvedOptions.signal,
-    ...resolvedOptions.requestOptions,
-  })
-  const totalLength = computed<number>(() => (Number(res.headers['content-length']) || 0) + startByte())
-  const downloadProgressStream = progress({ length: totalLength(), transferred: startByte() })
-  const progressHandler = useDownloadProgress()
-  downloadProgressStream.on('progress', progress => (
-    options.onDownloadProgress?.({
-      ...progress,
-      ...progressHandler(progress),
+  async function startDownload(): Promise<void> {
+    const startByte = computed<number>(() => fs.existsSync(resolvedOptions.tempFilePath) ? fs.statSync(resolvedOptions.tempFilePath).size : 0)
+    const res = await makeRequest(resolvedOptions, startByte(), {
+      signal: resolvedOptions.signal,
+      ...resolvedOptions.requestOptions,
     })
-  ))
+    const totalLength = computed<number>(() => (Number(res.headers['content-length']) || 0) + startByte())
+    const downloadProgressStream = progress({ length: totalLength(), transferred: startByte() })
+    const progressHandler = useDownloadProgress()
+    downloadProgressStream.on('progress', (progress) => {
+      const progressEvent: DownloadProgressEvent = {
+        ...progress,
+        ...progressHandler(progress),
+      }
+      options.onDownloadProgress?.(progressEvent)
+      emitter.emit('download-progress', progressEvent)
+    })
 
-  if (res.statusCode === 200 || res.statusCode === 206) {
-    const writeStream = fs.createWriteStream(resolvedOptions.tempFilePath, {
-      flags: startByte() > 0 ? 'a' : 'w',
-      start: startByte(),
-    })
-    res.pipe(downloadProgressStream).pipe(writeStream)
-    await onDownloaded(writeStream, res)
+    if (res.statusCode === 200 || res.statusCode === 206) {
+      const writeStream = fs.createWriteStream(resolvedOptions.tempFilePath, {
+        flags: startByte() > 0 ? 'a' : 'w',
+        start: startByte(),
+      })
+      res.pipe(downloadProgressStream).pipe(writeStream)
+      await onDownloaded(writeStream, res)
+    }
   }
 
-  const sha256 = await makeSha256Request(resolvedOptions)
-  await checkSha256(resolvedOptions.tempFilePath, sha256)
+  async function checkSha256(): Promise<void> {
+    const sha256 = await makeSha256Request(resolvedOptions)
+    await _checkSha256(resolvedOptions.tempFilePath, sha256)
+  }
 
   const extractedDir = path.join(resolvedOptions.cacheDir, '.tar-extracted')
-  if (!fs.existsSync(extractedDir))
-    fs.mkdirSync(extractedDir, { recursive: true })
-  await extractTar(resolvedOptions, extractedDir)
-  await extractZip(resolvedOptions, extractedDir)
-  if (resolvedOptions.clean !== false) {
-    fs.rmSync(resolvedOptions.tempFilePath, { recursive: true })
-    fs.rmSync(resolvedOptions.cacheDir, { recursive: true })
+
+  async function extractTar(): Promise<void> {
+    if (!fs.existsSync(extractedDir))
+      fs.mkdirSync(extractedDir, { recursive: true })
+    await _extractTar(resolvedOptions, extractedDir, emitter)
   }
+
+  async function extractZip(): Promise<void> {
+    await _extractZip(resolvedOptions, extractedDir, emitter)
+  }
+
+  async function clean(): Promise<void> {
+    if (resolvedOptions.clean !== false) {
+      fs.rmSync(resolvedOptions.tempFilePath, { recursive: true })
+      fs.rmSync(resolvedOptions.cacheDir, { recursive: true })
+    }
+  }
+
+  return {
+    startDownload,
+    checkSha256,
+    extractTar,
+    extractZip,
+    clean,
+    emit: emitter.emit,
+    on: emitter.on,
+    off: emitter.off,
+    all: emitter.all,
+  }
+}
+
+/**
+ * Download the ArkTS SDK.
+ *
+ * @deprecated Deprecate this entry in newer version.
+ * @param options - The options for the download.
+ */
+export async function download(options: DownloadOptions): Promise<DownloadExecutor> {
+  return await createDownloader(options)
 }
