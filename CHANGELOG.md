@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.9
+
+### Patch Changes
+
+- fix: compatibility
+
 ## 0.1.8
 
 ### Patch Changes
