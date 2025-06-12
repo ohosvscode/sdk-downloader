@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.15
+
+### Patch Changes
+
+- 44f4af4: feat: add extra request options
+
 ## 0.1.14
 
 ### Patch Changes
