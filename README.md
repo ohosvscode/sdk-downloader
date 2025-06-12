@@ -2,7 +2,15 @@
 
 Simple function to download the ArkTS SDK, streaming, simple, easy to use, and support resume download, fast ⚡️
 
-# Install 📦
+## Features 🚀
+
+- ↩️ Resume download ✅
+- ⬇ Download Progress, tar extract progress and zip extract progress tracking ✅
+- 🧵 HTTP/HTTPS support ✅
+- 🔗 Support cancel download ✅
+- 🧹 Clean the cache directory after the download is complete ✨
+
+## Install 📦
 
 ```bash
 pnpm add @arkts/sdk-downloader
