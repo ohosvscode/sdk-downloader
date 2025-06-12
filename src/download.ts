@@ -149,17 +149,16 @@ export async function download(options: DownloadOptions): Promise<void> {
       ...progressHandler(progress),
     })
   ))
-  const writeStream = fs.createWriteStream(resolvedOptions.tempFilePath, {
-    flags: startByte() > 0 ? 'a' : 'w',
-    start: startByte(),
-  })
+
   if (res.statusCode === 200 || res.statusCode === 206) {
+    const writeStream = fs.createWriteStream(resolvedOptions.tempFilePath, {
+      flags: startByte() > 0 ? 'a' : 'w',
+      start: startByte(),
+    })
     res.pipe(downloadProgressStream).pipe(writeStream)
+    await onDownloaded(writeStream, res)
   }
-  else {
-    res.pipe(downloadProgressStream)
-  }
-  await onDownloaded(writeStream, res)
+
   const sha256 = await makeSha256Request(resolvedOptions.url, resolvedOptions)
   await checkSha256(resolvedOptions.tempFilePath, sha256)
 
