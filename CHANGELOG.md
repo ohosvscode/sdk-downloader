@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.16
+
+### Patch Changes
+
+- fix: download/extraction error, testing for windows/linux/macOS
+
 ## 0.1.15
 
 ### Patch Changes

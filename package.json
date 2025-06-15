@@ -1,6 +1,6 @@
 {
   "name": "@arkts/sdk-downloader",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Download and extract the ArkTS SDK.",
   "author": "Naily Zero <zero@naily.cc>",
   "license": "MIT",
