@@ -2,19 +2,7 @@ name: CI
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: '部署环境'
-        required: true
-        default: 'production'
-        type: choice
-        options:
-          - production
-          - staging
-      version:
-        description: '版本号'
-        required: true
-        type: string
+    inputs: {}
 
 jobs:
   release:
