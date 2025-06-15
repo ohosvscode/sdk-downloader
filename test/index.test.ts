@@ -38,18 +38,14 @@ it('should download the SDK', async () => {
       console.warn(`Downloading, ${percentage}%, ${progress.network}${progress.unit}/s`)
     }
   })
-  downloader.on('tar-extracted', (entry) => {
-    console.warn(`Extracting: ${entry.path}`)
-  })
-  downloader.on('zip-extracted', (entry) => {
-    console.warn(`Extracting: ${entry.path}`)
-  })
-
   await downloader.startDownload()
   expect(fs.existsSync(cacheDir)).toBe(true)
   await downloader.checkSha256()
+  console.warn('Extracting tar...')
   await downloader.extractTar()
+  console.warn('Extracting zip...')
   await downloader.extractZip()
+  console.warn('Cleaning...')
   expect(fs.existsSync(targetDir)).toBe(true)
   await downloader.clean()
   expect(fs.existsSync(cacheDir)).toBe(false)
