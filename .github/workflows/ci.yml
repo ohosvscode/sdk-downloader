@@ -5,9 +5,12 @@ on:
     inputs: {}
 
 jobs:
-  release:
-    name: Release
-    runs-on: ubuntu-latest
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
