@@ -52,7 +52,7 @@ it('should download the SDK', async () => {
   await downloader.extractZip()
   expect(fs.existsSync(targetDir)).toBe(true)
   await downloader.clean()
-  expect(fs.readdirSync(cacheDir)).toHaveLength(0)
+  expect(fs.existsSync(cacheDir)).toBe(false)
 
   // Timeout: 20 min
 }, 20 * 60 * 1000)
