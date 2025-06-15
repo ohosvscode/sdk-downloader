@@ -74,11 +74,50 @@ function useDownloadProgress() {
 
 async function onDownloaded(writeStream: fs.WriteStream, res: import('node:http').IncomingMessage): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    writeStream.on('error', reject)
-    res.on('error', reject)
-    res.on('end', () => {
-      writeStream.close()
-      resolve()
+    let isResolved = false
+
+    function cleanup(): void {
+      isResolved = true
+      if (!res.destroyed) {
+        res.destroy()
+      }
+      if (!writeStream.destroyed) {
+        writeStream.destroy()
+      }
+    }
+
+    function handleError(error: unknown): void {
+      if (!isResolved) {
+        cleanup()
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        reject(new DownloadError(DownloadError.Code.DownloadFailed, {
+          message: `Download failed: ${errorMessage}`,
+          cause: error,
+        }))
+      }
+    }
+
+    writeStream.on('error', handleError)
+    writeStream.on('finish', () => {
+      if (!isResolved) {
+        isResolved = true
+        if (!res.destroyed) {
+          res.destroy()
+        }
+        resolve()
+      }
+    })
+
+    res.on('error', handleError)
+    res.on('close', () => {
+      if (!isResolved) {
+        if (!writeStream.writableEnded && writeStream.writable) {
+          cleanup()
+          reject(new DownloadError(DownloadError.Code.DownloadFailed, {
+            message: 'Connection closed before download completed',
+          }))
+        }
+      }
     })
   })
 }
