@@ -174,6 +174,8 @@ async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDi
 
   async function extractSingleZip(filePath: string): Promise<void> {
     const fileReadStream = fs.createReadStream(filePath).pipe(unzipper.Parse({ forceStream: true }))
+    const writePromises: Promise<void>[] = []
+
     for await (const entry of fileReadStream) {
       typeAssert<unzipper.Entry>(entry)
       const currentFilePath = path.join(resolvedOptions.targetDir, entry.path)
@@ -182,12 +184,13 @@ async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDi
         if (!fs.existsSync(path.dirname(currentFilePath)))
           fs.mkdirSync(path.dirname(currentFilePath), { recursive: true })
 
-        await new Promise<void>((resolve, reject) => {
+        const writePromise = new Promise<void>((resolve, reject) => {
           const writeStream = fs.createWriteStream(currentFilePath)
           writeStream.on('error', reject)
           writeStream.on('finish', resolve)
           entry.pipe(writeStream)
         })
+        writePromises.push(writePromise)
 
         await resolvedOptions.onZipExtracted?.(entry)
         emitter.emit('zip-extracted', entry)
@@ -197,6 +200,9 @@ async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDi
           fs.mkdirSync(currentFilePath, { recursive: true })
       }
     }
+
+    // 等待所有文件写入完成
+    await Promise.all(writePromises)
   }
 
   await Promise.all(files.map(extractSingleZip))
