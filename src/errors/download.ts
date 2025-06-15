@@ -16,5 +16,8 @@ export namespace DownloadError {
     ZipExtractionFailed = 'ZIP_EXTRACTION_FAILED',
     InvalidUrl = 'INVALID_URL',
     Sha256Mismatch = 'SHA256_MISMATCH',
+    FileNotFound = 'FILE_NOT_FOUND',
+    InvalidSha256 = 'INVALID_SHA256',
+    FileReadError = 'FILE_READ_ERROR',
   }
 }

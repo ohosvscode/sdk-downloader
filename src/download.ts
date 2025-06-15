@@ -84,14 +84,46 @@ async function onDownloaded(writeStream: fs.WriteStream, res: import('node:http'
 }
 
 async function _checkSha256(filePath: string, sha256: string): Promise<void> {
-  const fileBuffer = fs.readFileSync(filePath)
-  const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex').trim()
-  sha256 = sha256.trim()
-  if (hash !== sha256) {
-    throw new DownloadError(DownloadError.Code.Sha256Mismatch, {
-      message: `SHA256 checksum mismatch, expected: ${sha256}, actual: ${hash}`,
+  if (!fs.existsSync(filePath)) {
+    throw new DownloadError(DownloadError.Code.FileNotFound, {
+      message: `File not found: ${filePath}`,
     })
   }
+
+  if (!sha256 || typeof sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(sha256.trim())) {
+    throw new DownloadError(DownloadError.Code.InvalidSha256, {
+      message: 'Invalid SHA256 format',
+    })
+  }
+
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha256')
+    const stream = fs.createReadStream(filePath)
+
+    stream.on('error', (error) => {
+      reject(new DownloadError(DownloadError.Code.FileReadError, {
+        message: `Failed to read file: ${error.message}`,
+      }))
+    })
+
+    stream.on('data', (chunk) => {
+      hash.update(chunk)
+    })
+
+    stream.on('end', () => {
+      const calculatedHash = hash.digest('hex').trim()
+      const expectedHash = sha256.trim()
+
+      if (calculatedHash !== expectedHash) {
+        reject(new DownloadError(DownloadError.Code.Sha256Mismatch, {
+          message: `SHA256 checksum mismatch, expected: ${expectedHash}, actual: ${calculatedHash}`,
+        }))
+      }
+      else {
+        resolve()
+      }
+    })
+  })
 }
 
 async function _extractTar(resolvedOptions: ResolvedDownloadOptions, extractedDir: string, emitter: Emitter<DownloadEventMap>): Promise<void> {
