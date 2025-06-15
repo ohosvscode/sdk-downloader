@@ -3,6 +3,7 @@ import type { DownloadEventMap, DownloadExecutor, DownloadProgressEvent, Resolve
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { computed } from 'alien-signals'
 import fg from 'fast-glob'
 import mitt from 'mitt'
@@ -167,7 +168,17 @@ async function _extractTar(resolvedOptions: ResolvedDownloadOptions, extractedDi
 }
 
 async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDir: string, emitter: Emitter<DownloadEventMap>): Promise<void> {
-  const files = fg.sync(path.join(extractedDir, '**', '*.zip'), {
+  // 根据操作系统选择要解压的目录
+  const osDir = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : 'linux'
+  const osExtractedDir = path.join(extractedDir, osDir)
+
+  if (!fs.existsSync(osExtractedDir)) {
+    throw new DownloadError(DownloadError.Code.ZipExtractionFailed, {
+      message: `OS directory not found: ${osDir}`,
+    })
+  }
+
+  const files = fg.sync(path.join(osExtractedDir, '**', '*.zip'), {
     onlyFiles: true,
     absolute: true,
   }).filter(file => file.endsWith('.zip'))
@@ -203,6 +214,11 @@ async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDi
 
     // 等待所有文件写入完成
     await Promise.all(writePromises)
+  }
+
+  // 确保目标目录存在
+  if (!fs.existsSync(resolvedOptions.targetDir)) {
+    fs.mkdirSync(resolvedOptions.targetDir, { recursive: true })
   }
 
   await Promise.all(files.map(extractSingleZip))
