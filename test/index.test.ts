@@ -44,10 +44,26 @@ it('should download the SDK', async () => {
   console.warn('Extracting tar...')
   await downloader.extractTar()
   console.warn('Extracting zip...')
-  await downloader.extractZip()
-  console.warn('Cleaning...')
 
   // 添加调试信息
+  console.warn('Before extractZip:')
+  console.warn('Cache directory:', cacheDir)
+  console.warn('Cache directory exists:', fs.existsSync(cacheDir))
+  if (fs.existsSync(cacheDir)) {
+    console.warn('Cache directory contents:', fs.readdirSync(cacheDir))
+  }
+
+  await downloader.extractZip()
+
+  // 添加调试信息
+  console.warn('After extractZip:')
+  console.warn('Cache directory:', cacheDir)
+  console.warn('Cache directory exists:', fs.existsSync(cacheDir))
+  if (fs.existsSync(cacheDir)) {
+    console.warn('Cache directory contents:', fs.readdirSync(cacheDir))
+  }
+
+  console.warn('Cleaning...')
   console.warn('Target directory:', targetDir)
   console.warn('Target directory exists:', fs.existsSync(targetDir))
   if (fs.existsSync(targetDir)) {
