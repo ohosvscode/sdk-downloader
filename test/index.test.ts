@@ -19,8 +19,8 @@ function getOS(): SdkOS {
 }
 
 it('should download the SDK', async () => {
-  const cacheDir = path.join(process.cwd(), 'target/.cache')
-  const targetDir = path.join(process.cwd(), 'target/download')
+  const cacheDir = path.join(process.cwd(), 'target', '.cache')
+  const targetDir = path.join(process.cwd(), 'target', 'download')
   const downloader = await createDownloader({
     url: {
       arch: getArch(),

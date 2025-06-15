@@ -181,7 +181,14 @@ async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDi
       if (entry.type === 'File') {
         if (!fs.existsSync(path.dirname(currentFilePath)))
           fs.mkdirSync(path.dirname(currentFilePath), { recursive: true })
-        entry.pipe(fs.createWriteStream(currentFilePath))
+
+        await new Promise<void>((resolve, reject) => {
+          const writeStream = fs.createWriteStream(currentFilePath)
+          writeStream.on('error', reject)
+          writeStream.on('finish', resolve)
+          entry.pipe(writeStream)
+        })
+
         await resolvedOptions.onZipExtracted?.(entry)
         emitter.emit('zip-extracted', entry)
       }
