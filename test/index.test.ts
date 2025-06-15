@@ -33,8 +33,12 @@ it('should download the SDK', async () => {
 
   let totalPercentage = 0
   downloader.on('download-progress', (progress) => {
-    console.warn(`Downloading ${progress.percentage}... ${progress.network}${progress.unit}/s`)
     totalPercentage += progress.increment
+    // 仅在20，40，60，80，100时打印
+    const percentage = progress.percentage.toFixed(0)
+    if (percentage === '20' || percentage === '40' || percentage === '60' || percentage === '80' || percentage === '100') {
+      console.warn(`Downloading ${percentage}... ${progress.network}${progress.unit}/s`)
+    }
   })
   downloader.on('tar-extracted', (entry) => {
     console.warn(`Extracting: ${entry.path}`)
