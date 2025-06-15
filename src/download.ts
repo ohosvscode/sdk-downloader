@@ -168,17 +168,17 @@ async function _extractTar(resolvedOptions: ResolvedDownloadOptions, extractedDi
 }
 
 async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDir: string, emitter: Emitter<DownloadEventMap>): Promise<void> {
-  // 根据操作系统选择要解压的目录
-  const osDir = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : 'linux'
-  const osExtractedDir = path.join(extractedDir, osDir)
+  // 在MacOS上解压直接解压到目标目录即可，linux和windows则需要找到对应的目录再解压
+  const osDir = process.platform === 'win32' ? 'windows' : process.platform === 'linux' ? 'linux' : undefined
+  const parseExtractedDir = osDir ? path.join(extractedDir, osDir) : extractedDir
 
-  if (!fs.existsSync(osExtractedDir)) {
+  if (!fs.existsSync(parseExtractedDir)) {
     throw new DownloadError(DownloadError.Code.ZipExtractionFailed, {
       message: `OS directory not found: ${osDir}`,
     })
   }
 
-  const files = fg.sync(path.join(osExtractedDir, '**', '*.zip'), {
+  const files = fg.sync(path.join(parseExtractedDir, '**', '*.zip'), {
     onlyFiles: true,
     absolute: true,
   }).filter(file => file.endsWith('.zip'))
