@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import fg from 'fast-glob'
 import { createDownloader, SdkArch, SdkOS, SdkVersion } from '../src'
 
 function getArch(): SdkArch {
@@ -51,6 +52,13 @@ it('should download the SDK', async () => {
   console.warn('Cache directory exists:', fs.existsSync(cacheDir))
   if (fs.existsSync(cacheDir)) {
     console.warn('Cache directory contents:', fs.readdirSync(cacheDir))
+    const tarExtractedDir = path.join(cacheDir, '.tar-extracted')
+    if (fs.existsSync(tarExtractedDir)) {
+      console.warn('.tar-extracted directory contents:', fs.readdirSync(tarExtractedDir))
+      // 递归列出所有文件
+      const allFiles = fg.sync('**/*', { cwd: tarExtractedDir, absolute: true })
+      console.warn('All files in .tar-extracted:', allFiles)
+    }
   }
 
   await downloader.extractZip()
@@ -61,6 +69,13 @@ it('should download the SDK', async () => {
   console.warn('Cache directory exists:', fs.existsSync(cacheDir))
   if (fs.existsSync(cacheDir)) {
     console.warn('Cache directory contents:', fs.readdirSync(cacheDir))
+    const tarExtractedDir = path.join(cacheDir, '.tar-extracted')
+    if (fs.existsSync(tarExtractedDir)) {
+      console.warn('.tar-extracted directory contents:', fs.readdirSync(tarExtractedDir))
+      // 递归列出所有文件
+      const allFiles = fg.sync('**/*', { cwd: tarExtractedDir, absolute: true })
+      console.warn('All files in .tar-extracted:', allFiles)
+    }
   }
 
   console.warn('Cleaning...')
