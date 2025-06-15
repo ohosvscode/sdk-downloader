@@ -46,6 +46,14 @@ it('should download the SDK', async () => {
   console.warn('Extracting zip...')
   await downloader.extractZip()
   console.warn('Cleaning...')
+
+  // 添加调试信息
+  console.warn('Target directory:', targetDir)
+  console.warn('Target directory exists:', fs.existsSync(targetDir))
+  if (fs.existsSync(targetDir)) {
+    console.warn('Target directory contents:', fs.readdirSync(targetDir))
+  }
+
   expect(fs.existsSync(targetDir)).toBe(true)
   await downloader.clean()
   expect(fs.existsSync(cacheDir)).toBe(false)
