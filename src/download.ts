@@ -109,16 +109,6 @@ async function onDownloaded(writeStream: fs.WriteStream, res: import('node:http'
     })
 
     res.on('error', handleError)
-    res.on('close', () => {
-      if (!isResolved) {
-        if (!writeStream.writableEnded && writeStream.writable) {
-          cleanup()
-          reject(new DownloadError(DownloadError.Code.DownloadFailed, {
-            message: 'Connection closed before download completed',
-          }))
-        }
-      }
-    })
   })
 }
 
