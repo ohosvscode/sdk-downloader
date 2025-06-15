@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.17
+
+### Patch Changes
+
+- 7a9464c: fix: exclude the macOS
+
 ## 0.1.16
 
 ### Patch Changes
