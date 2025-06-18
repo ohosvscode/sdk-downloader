@@ -94,30 +94,44 @@ async function download(version: SdkVersion, expect: ExpectStatic): Promise<void
 describe('should download the SDK', () => {
   it('should download the SDK API10', async ({ expect }) => {
     await download(SdkVersion.API10, expect)
+    expect(fs.existsSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API10))).toBe(true)
+    fs.rmSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API10), { recursive: true, force: true })
   }, 20 * 60 * 1000)
 
   it('should download the SDK API11', async ({ expect }) => {
     await download(SdkVersion.API11, expect)
+    expect(fs.existsSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API11))).toBe(true)
+    fs.rmSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API11), { recursive: true, force: true })
   }, 20 * 60 * 1000)
 
   it('should download the SDK API12', async ({ expect }) => {
     await download(SdkVersion.API12, expect)
+    expect(fs.existsSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API12))).toBe(true)
+    fs.rmSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API12), { recursive: true, force: true })
   // Timeout: 20 min
   }, 20 * 60 * 1000)
 
   it('should download the SDK API13', async ({ expect }) => {
     await download(SdkVersion.API13, expect)
+    expect(fs.existsSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API13))).toBe(true)
+    fs.rmSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API13), { recursive: true, force: true })
   }, 20 * 60 * 1000)
 
   it('should download the SDK API14', async ({ expect }) => {
     await download(SdkVersion.API14, expect)
+    expect(fs.existsSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API14))).toBe(true)
+    fs.rmSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API14), { recursive: true, force: true })
   }, 20 * 60 * 1000)
 
   it('should download the SDK API15', async ({ expect }) => {
     await download(SdkVersion.API15, expect)
+    expect(fs.existsSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API15))).toBe(true)
+    fs.rmSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API15), { recursive: true, force: true })
   }, 20 * 60 * 1000)
 
   it('should download the SDK API18', async ({ expect }) => {
     await download(SdkVersion.API18, expect)
+    expect(fs.existsSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API18))).toBe(true)
+    fs.rmSync(path.join(process.cwd(), 'target', 'download', SdkVersion.API18), { recursive: true, force: true })
   }, 20 * 60 * 1000)
 }, 20 * 60 * 1000 * 10)
