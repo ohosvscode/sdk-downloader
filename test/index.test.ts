@@ -1,3 +1,4 @@
+import type { ExpectStatic } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import fg from 'fast-glob'
@@ -19,7 +20,7 @@ function getOS(): SdkOS {
     return SdkOS.Windows
 }
 
-async function download(version: SdkVersion): Promise<void> {
+async function download(version: SdkVersion, expect: ExpectStatic): Promise<void> {
   const cacheDir = path.join(process.cwd(), 'target', '.cache', version)
   const targetDir = path.join(process.cwd(), 'target', 'download', version)
   const downloader = await createDownloader({
@@ -90,31 +91,33 @@ async function download(version: SdkVersion): Promise<void> {
   expect(fs.existsSync(cacheDir)).toBe(false)
 }
 
-it.concurrent('should download the SDK API10', async () => {
-  await download(SdkVersion.API10)
-}, 20 * 60 * 1000)
+describe.concurrent('should download the SDK', () => {
+  it('should download the SDK API10', async ({ expect }) => {
+    await download(SdkVersion.API10, expect)
+  }, 20 * 60 * 1000)
 
-it.concurrent('should download the SDK API11', async () => {
-  await download(SdkVersion.API11)
-}, 20 * 60 * 1000)
+  it('should download the SDK API11', async ({ expect }) => {
+    await download(SdkVersion.API11, expect)
+  }, 20 * 60 * 1000)
 
-it.concurrent('should download the SDK API12', async () => {
-  await download(SdkVersion.API12)
+  it('should download the SDK API12', async ({ expect }) => {
+    await download(SdkVersion.API12, expect)
   // Timeout: 20 min
-}, 20 * 60 * 1000)
+  }, 20 * 60 * 1000)
 
-it.concurrent('should download the SDK API13', async () => {
-  await download(SdkVersion.API13)
-}, 20 * 60 * 1000)
+  it('should download the SDK API13', async ({ expect }) => {
+    await download(SdkVersion.API13, expect)
+  }, 20 * 60 * 1000)
 
-it.concurrent('should download the SDK API14', async () => {
-  await download(SdkVersion.API14)
-}, 20 * 60 * 1000)
+  it('should download the SDK API14', async ({ expect }) => {
+    await download(SdkVersion.API14, expect)
+  }, 20 * 60 * 1000)
 
-it.concurrent('should download the SDK API15', async () => {
-  await download(SdkVersion.API15)
-}, 20 * 60 * 1000)
+  it('should download the SDK API15', async ({ expect }) => {
+    await download(SdkVersion.API15, expect)
+  }, 20 * 60 * 1000)
 
-it.concurrent('should download the SDK API18', async () => {
-  await download(SdkVersion.API18)
+  it('should download the SDK API18', async ({ expect }) => {
+    await download(SdkVersion.API18, expect)
+  })
 })
