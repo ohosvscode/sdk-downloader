@@ -145,9 +145,10 @@ async function _checkSha256(filePath: string, sha256: string): Promise<void> {
       const expectedHash = sha256.trim()
 
       if (calculatedHash !== expectedHash) {
-        reject(new DownloadError(DownloadError.Code.Sha256Mismatch, {
+        const error = new DownloadError(DownloadError.Code.Sha256Mismatch, {
           message: `SHA256 checksum mismatch, expected: ${expectedHash}, actual: ${calculatedHash}`,
-        }))
+        })
+        reject(error)
       }
       else {
         resolve()
@@ -169,19 +170,16 @@ async function _extractTar(resolvedOptions: ResolvedDownloadOptions, extractedDi
 
 async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDir: string, emitter: Emitter<DownloadEventMap>): Promise<void> {
   // 在MacOS上解压直接解压到目标目录即可，linux和windows则需要找到对应的目录再解压
-  const osDir = process.platform === 'win32' ? 'windows' : process.platform === 'linux' ? 'linux' : undefined
-  const parseExtractedDir = osDir ? path.join(extractedDir, osDir) : extractedDir
+  const currentOS = process.platform === 'win32' ? 'windows' : process.platform === 'linux' ? 'linux' : undefined
 
-  if (!fs.existsSync(parseExtractedDir)) {
-    throw new DownloadError(DownloadError.Code.ZipExtractionFailed, {
-      message: `OS directory not found: ${osDir}`,
-    })
-  }
-
-  const files = fg.sync(path.join(parseExtractedDir, '**', '*.zip'), {
+  let files = fg.sync(path.join(extractedDir, '**', '*.zip'), {
     onlyFiles: true,
     absolute: true,
   }).filter(file => file.endsWith('.zip'))
+
+  if (currentOS === 'linux' || currentOS === 'windows') {
+    files = files.filter(filePath => filePath.includes(currentOS))
+  }
 
   async function extractSingleZip(filePath: string): Promise<void> {
     const fileReadStream = fs.createReadStream(filePath).pipe(unzipper.Parse({ forceStream: true }))

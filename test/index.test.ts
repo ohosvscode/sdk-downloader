@@ -19,14 +19,14 @@ function getOS(): SdkOS {
     return SdkOS.Windows
 }
 
-it('should download the SDK', async () => {
+async function download(version: SdkVersion): Promise<void> {
   const cacheDir = path.join(process.cwd(), 'target', '.cache')
   const targetDir = path.join(process.cwd(), 'target', 'download')
   const downloader = await createDownloader({
     url: {
       arch: getArch(),
       os: getOS(),
-      version: SdkVersion.API12,
+      version,
     },
     cacheDir,
     targetDir,
@@ -88,6 +88,33 @@ it('should download the SDK', async () => {
   expect(fs.existsSync(targetDir)).toBe(true)
   await downloader.clean()
   expect(fs.existsSync(cacheDir)).toBe(false)
+}
 
+it.concurrent('should download the SDK API10', async () => {
+  await download(SdkVersion.API10)
+}, 20 * 60 * 1000)
+
+it.concurrent('should download the SDK API11', async () => {
+  await download(SdkVersion.API11)
+}, 20 * 60 * 1000)
+
+it.concurrent('should download the SDK API12', async () => {
+  await download(SdkVersion.API12)
   // Timeout: 20 min
 }, 20 * 60 * 1000)
+
+it.concurrent('should download the SDK API13', async () => {
+  await download(SdkVersion.API13)
+}, 20 * 60 * 1000)
+
+it.concurrent('should download the SDK API14', async () => {
+  await download(SdkVersion.API14)
+}, 20 * 60 * 1000)
+
+it.concurrent('should download the SDK API15', async () => {
+  await download(SdkVersion.API15)
+}, 20 * 60 * 1000)
+
+it.concurrent('should download the SDK API18', async () => {
+  await download(SdkVersion.API18)
+})
