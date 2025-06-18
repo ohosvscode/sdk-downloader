@@ -10,6 +10,17 @@ Simple function to download the ArkTS SDK, streaming, simple, easy to use, and s
 - 🔗 Support cancel download ✅
 - 🧹 Clean the cache directory after the download is complete ✨
 - 👂 Support listen events when download, tar extract and zip extract
+- ㊙️ Check the SHA256 of the downloaded `tar.gz` file
+
+## Supported Platforms 💻
+
+- [x] Windows
+- [x] macOS
+- [x] Linux
+
+The unit test is run on Windows, macOS and Linux, you can see the test results in github actions:
+
+> Current Test Status: [![CI](https://github.com/Groupguanfang/arkts-sdk-downloader/actions/workflows/ci.yml/badge.svg)](https://github.com/Groupguanfang/arkts-sdk-downloader/actions/workflows/ci.yml)
 
 ## Install 📦
 
