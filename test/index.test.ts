@@ -20,8 +20,8 @@ function getOS(): SdkOS {
 }
 
 async function download(version: SdkVersion): Promise<void> {
-  const cacheDir = path.join(process.cwd(), 'target', '.cache')
-  const targetDir = path.join(process.cwd(), 'target', 'download')
+  const cacheDir = path.join(process.cwd(), 'target', '.cache', version)
+  const targetDir = path.join(process.cwd(), 'target', 'download', version)
   const downloader = await createDownloader({
     url: {
       arch: getArch(),
