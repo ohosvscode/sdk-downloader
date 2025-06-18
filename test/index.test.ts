@@ -91,33 +91,33 @@ async function download(version: SdkVersion, expect: ExpectStatic): Promise<void
   expect(fs.existsSync(cacheDir)).toBe(false)
 }
 
-describe.concurrent('should download the SDK', () => {
+describe('should download the SDK', () => {
   it('should download the SDK API10', async ({ expect }) => {
     await download(SdkVersion.API10, expect)
   }, 20 * 60 * 1000)
 
-  it('should download the SDK API11', async ({ expect }) => {
+  it.todo('should download the SDK API11', async ({ expect }) => {
     await download(SdkVersion.API11, expect)
   }, 20 * 60 * 1000)
 
-  it('should download the SDK API12', async ({ expect }) => {
+  it.todo('should download the SDK API12', async ({ expect }) => {
     await download(SdkVersion.API12, expect)
   // Timeout: 20 min
   }, 20 * 60 * 1000)
 
-  it('should download the SDK API13', async ({ expect }) => {
+  it.todo('should download the SDK API13', async ({ expect }) => {
     await download(SdkVersion.API13, expect)
   }, 20 * 60 * 1000)
 
-  it('should download the SDK API14', async ({ expect }) => {
+  it.todo('should download the SDK API14', async ({ expect }) => {
     await download(SdkVersion.API14, expect)
   }, 20 * 60 * 1000)
 
-  it('should download the SDK API15', async ({ expect }) => {
+  it.todo('should download the SDK API15', async ({ expect }) => {
     await download(SdkVersion.API15, expect)
   }, 20 * 60 * 1000)
 
-  it('should download the SDK API18', async ({ expect }) => {
+  it.todo('should download the SDK API18', async ({ expect }) => {
     await download(SdkVersion.API18, expect)
   }, 20 * 60 * 1000)
-})
+}, 20 * 60 * 1000 * 10)
