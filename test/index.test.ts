@@ -119,5 +119,5 @@ describe.concurrent('should download the SDK', () => {
 
   it('should download the SDK API18', async ({ expect }) => {
     await download(SdkVersion.API18, expect)
-  })
+  }, 20 * 60 * 1000)
 })
