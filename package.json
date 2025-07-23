@@ -25,6 +25,9 @@
       "require": "./dist/index.js"
     }
   },
+  "bin": {
+    "arkcode-sdk-downloader": "./dist/cli.js"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -47,7 +50,10 @@
     "progress-stream": "^2.0.0",
     "tar": "^7.4.3",
     "tar-stream": "^3.1.7",
-    "unzipper": "^0.12.3"
+    "unzipper": "^0.12.3",
+    "cac": "^6.7.14",
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.0.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.14.1",
