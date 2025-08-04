@@ -6,7 +6,7 @@ export enum SdkVersion {
   API14 = '5.0.2',
   API15 = '5.0.3',
   API18 = '5.1.0',
-  API20 = '6.0.0-Beta1'
+  API20 = '6.0.0-Beta1',
 }
 
 export enum SdkArch {
@@ -118,7 +118,7 @@ const urls: SdkUrlStorage = {
       [SdkOS.Windows]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0-Beta1/ohos-sdk-windows_linux-public.tar.gz',
       [SdkOS.Linux]: null,
     },
-  }
+  },
 }
 
 /**
