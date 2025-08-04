@@ -1,7 +1,7 @@
 {
   "name": "@arkts/sdk-downloader",
   "type": "module",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "description": "Download and extract the ArkTS SDK.",
   "author": "Naily Zero <zero@naily.cc>",
   "license": "MIT",
@@ -31,6 +31,7 @@
   "types": "dist/index.d.ts",
   "bin": {
     "@arkts/sdk-downloader": "./dist/cli.js",
+    "sdk-downloader": "./dist/cli.js",
     "arkcode-sdk-downloader": "./dist/cli.js"
   },
   "files": [
