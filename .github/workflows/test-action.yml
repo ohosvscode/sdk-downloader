@@ -19,11 +19,9 @@ jobs:
       uses: ./
       id: testing
       with:
-        version: '4.0.0'
-        arch: 'X86'
-        os: 'Linux'
-        log-type: 'explicit'
-        log-timeout: '3000'
+        version: API18
+        arch: X86
+        os: Linux
         
     - name: Show results
       run: 'echo "Explicit test SDK path: ${{ steps.testing.outputs.sdk-path }}'
