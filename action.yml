@@ -1,6 +1,9 @@
 name: Download OpenHarmony SDK
 description: Download OpenHarmony SDK for CI/CD workflows
 author: Naily Zero
+branding:
+  icon: arrow-down
+  color: blue
 inputs:
   version:
     description: SDK version to download, default is `API18`
