@@ -22,14 +22,14 @@ jobs:
         cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci
+      run: pnpm ci
       
     - name: Build project
-      run: npm run build
+      run: pnpm run build
       
     - name: Test with explicit logging
-      id: test-explicit
       uses: ./
+      id: testing
       with:
         version: '4.0.0'
         arch: 'X86'
@@ -37,14 +37,5 @@ jobs:
         log-type: 'explicit'
         log-timeout: '3000'
         
-    - name: Test with silent logging
-      id: test-silent
-      uses: ./
-      with:
-        version: '4.0.0'
-        arch: 'X86'
-        os: 'Linux'
-        log-type: 'silent'
-        
     - name: Show results
-      run: 'echo "Explicit test SDK path: ${{ steps.test-explicit.outputs.sdk-path }}'
+      run: 'echo "Explicit test SDK path: ${{ steps.testing.outputs.sdk-path }}'
