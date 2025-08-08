@@ -58,6 +58,7 @@
     "unzipper": "^0.12.3"
   },
   "devDependencies": {
+    "@actions/core": "^1.11.1",
     "@antfu/eslint-config": "^4.14.1",
     "@changesets/cli": "^2.29.4",
     "@types/cli-progress": "^3.11.6",

@@ -1,0 +1,65 @@
+name: Download OpenHarmony SDK
+description: Download OpenHarmony SDK for CI/CD workflows
+author: Naily Zero
+inputs:
+  version:
+    description: 'SDK version to download'
+    required: true
+    default: '4.0.0.0'
+  arch:
+    description: 'SDK architecture'
+    required: false
+    default: 'X86'
+  os:
+    description: 'SDK operating system'
+    required: false
+    default: 'Linux'
+  cache-dir:
+    description: 'Cache directory for downloaded files'
+    required: false
+    default: '.cache/sdk'
+  target-dir:
+    description: 'Target directory to extract SDK'
+    required: false
+    default: 'sdk'
+  clean:
+    description: 'Whether to clean cache after download'
+    required: false
+    default: 'true'
+  log-type:
+    description: 'Log type, (default: explicit), can be explicit, full, or silent'
+    required: false
+    default: 'explicit'
+  log-timeout:
+    description: 'Timeout for log output in milliseconds, default is 5000ms'
+    required: false
+    default: '5000'
+outputs:
+  sdk-path:
+    description: 'Path to the extracted SDK'
+    value: ${{ steps.download-sdk.outputs.sdk-path }}
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: latest
+        
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+      
+    - name: Build project
+      shell: bash
+      run: pnpm run build
+      
+    - name: Run SDK downloader
+      shell: node
+      run: dist/github-action.js
