@@ -30,13 +30,13 @@ async function run(): Promise<void> {
   const cacheKey = `ohos-sdk-${version}-${arch}-${os}`
   const cacheHit = await cache.restoreCache([path.resolve(targetDir)], cacheKey)
   if (cacheHit) {
-    console.warn(`Cache hit: ${cacheHit}, skipping download...`)
+    logger.warn(`Cache hit: ${cacheHit}, skipping download...`)
+    await logSdkDirStructure(logger, targetDir)
     core.setOutput('sdkPath', path.resolve(targetDir))
     return
   }
   else {
     logger.warn(`Cache miss, starting to download...`)
-    await logSdkDirStructure(logger, targetDir)
   }
 
   await runCommandLineDownload({
