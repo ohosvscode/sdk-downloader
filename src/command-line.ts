@@ -15,6 +15,7 @@ interface DownloadCommandLineOptions {
   targetDir: string
   logType: 'explicit' | 'full' | 'silent'
   logTimeout: number
+  logger?: P.Logger
 }
 
 function isLogType(logType: string): logType is 'explicit' | 'full' | 'silent' {
@@ -23,6 +24,20 @@ function isLogType(logType: string): logType is 'explicit' | 'full' | 'silent' {
 
 export interface RunCommandLineDownloadResult {
   logger: P.Logger
+}
+
+export async function logSdkDirStructure(logger: P.Logger, unResolveSdkDir: string): Promise<void> {
+  // Log the sdk directory structure
+  const sdkDir = path.resolve(unResolveSdkDir)
+  const sdkDirContents = fs.readdirSync(sdkDir)
+  logger.info({ sdkDirContents }, `SDK directory structure:`)
+  sdkDirContents.forEach((item) => {
+    const ohUniPackageJson = path.resolve(sdkDir, item, 'oh-uni-package.json')
+    logger.info({
+      msg: `|- ${path.resolve(sdkDir, item)}`,
+      ohUniPackageJson: fs.existsSync(ohUniPackageJson) ? JSON.parse(fs.readFileSync(ohUniPackageJson, 'utf-8')) : null,
+    })
+  })
 }
 
 export async function runCommandLineDownload(options: DownloadCommandLineOptions): Promise<RunCommandLineDownloadResult> {
@@ -36,7 +51,7 @@ export async function runCommandLineDownload(options: DownloadCommandLineOptions
     throw new CliError(`No SDK found for version ${options.apiVersion}, architecture ${options.arch}, and OS ${options.os}.`, options)
   }
 
-  const logger = P(pretty({ colorize: true, colorizeObjects: true, singleLine: true }))
+  const logger = options.logger ?? P(pretty({ colorize: true, colorizeObjects: true, singleLine: true }))
   logger.info(options, `CLI Options:`)
   const abortController = new AbortController()
   process.on('exit', () => abortController.abort())
@@ -99,16 +114,7 @@ export async function runCommandLineDownload(options: DownloadCommandLineOptions
   logger.info(`Cleanup completed, SDK is ready in ${options.targetDir}.`)
 
   // Log the sdk directory structure
-  const sdkDir = path.resolve(options.targetDir)
-  const sdkDirContents = fs.readdirSync(sdkDir)
-  logger.info({ sdkDirContents }, `SDK directory structure:`)
-  sdkDirContents.forEach((item) => {
-    const ohUniPackageJson = path.resolve(sdkDir, item, 'oh-uni-package.json')
-    logger.info({
-      msg: `|- ${path.resolve(sdkDir, item)}`,
-      ohUniPackageJson: fs.existsSync(ohUniPackageJson) ? JSON.parse(fs.readFileSync(ohUniPackageJson, 'utf-8')) : null,
-    })
-  })
+  await logSdkDirStructure(logger, options.targetDir)
 
   return {
     logger,

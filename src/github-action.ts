@@ -2,7 +2,9 @@ import type { SdkVersion } from './enums/sdk'
 import path from 'node:path'
 import * as cache from '@actions/cache'
 import * as core from '@actions/core'
-import { runCommandLineDownload } from './command-line'
+import P from 'pino'
+import pretty from 'pino-pretty'
+import { logSdkDirStructure, runCommandLineDownload } from './command-line'
 import { SdkArch, SdkOS } from './enums/sdk'
 
 async function run(): Promise<void> {
@@ -15,6 +17,7 @@ async function run(): Promise<void> {
   const logType = core.getInput('log_type', { required: false }) || 'explicit'
   const logTimeout = Number.parseInt(core.getInput('log_timeout', { required: false }) || '5000', 10)
   const isCache = core.getBooleanInput('cache', { required: false })
+  const logger = P(pretty({ colorize: true, colorizeObjects: true, singleLine: true }))
 
   // 转换字符串输入为枚举值（保持原始大小写）
   const arch = archInput.toLowerCase() === 'arm' ? SdkArch.ARM : SdkArch.X86
@@ -32,10 +35,11 @@ async function run(): Promise<void> {
     return
   }
   else {
-    console.warn(`Cache miss, starting to download...`)
+    logger.warn(`Cache miss, starting to download...`)
+    await logSdkDirStructure(logger, targetDir)
   }
 
-  const { logger } = await runCommandLineDownload({
+  await runCommandLineDownload({
     apiVersion: version,
     arch: SdkArch[arch] as keyof typeof SdkArch,
     os: SdkOS[os] as keyof typeof SdkOS,
@@ -43,6 +47,7 @@ async function run(): Promise<void> {
     targetDir,
     logType: logType as 'explicit' | 'full' | 'silent',
     logTimeout,
+    logger,
   })
 
   if (isCache) {
