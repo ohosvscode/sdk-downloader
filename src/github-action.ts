@@ -31,6 +31,9 @@ async function run(): Promise<void> {
     core.setOutput('sdkPath', path.resolve(targetDir))
     return
   }
+  else {
+    console.warn(`Cache miss, starting to download...`)
+  }
 
   const { logger } = await runCommandLineDownload({
     apiVersion: version,
