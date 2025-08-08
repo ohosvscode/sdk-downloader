@@ -99,10 +99,16 @@ export async function runCommandLineDownload(options: DownloadCommandLineOptions
   logger.info(`Cleanup completed, SDK is ready in ${options.targetDir}.`)
 
   // Log the sdk directory structure
-  logger.info(`SDK directory structure:`)
   const sdkDir = path.resolve(options.targetDir)
-  const sdkDirContent = fs.readdirSync(sdkDir)
-  logger.info(sdkDirContent.map(item => path.resolve(sdkDir, item)).join('|-\n'))
+  const sdkDirContents = fs.readdirSync(sdkDir)
+  logger.info({ sdkDirContents }, `SDK directory structure:`)
+  sdkDirContents.forEach((item) => {
+    const ohUniPackageJson = path.resolve(sdkDir, item, 'oh-uni-package.json')
+    logger.info({
+      msg: `|- ${path.resolve(sdkDir, item)}`,
+      ohUniPackageJson: fs.existsSync(ohUniPackageJson) ? JSON.parse(fs.readFileSync(ohUniPackageJson, 'utf-8')) : null,
+    })
+  })
 
   return {
     logger,
