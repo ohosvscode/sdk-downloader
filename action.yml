@@ -61,5 +61,6 @@ runs:
       run: pnpm run build
       
     - name: Run SDK downloader
-      shell: node
-      run: dist/github-action.js
+      id: download-sdk
+      shell: bash
+      run: node dist/github-action.js
