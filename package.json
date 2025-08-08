@@ -33,8 +33,8 @@
     "arkcode-sdk-downloader": "./bin/cli.js"
   },
   "files": [
-    "dist",
-    "bin"
+    "bin",
+    "dist"
   ],
   "publishConfig": {
     "access": "public"

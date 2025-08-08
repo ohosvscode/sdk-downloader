@@ -1,3 +1,4 @@
+import process from 'node:process'
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
@@ -5,5 +6,5 @@ export default defineConfig({
   sourcemap: true,
   dts: true,
   format: ['esm', 'cjs'],
-  external: ['@actions/core']
+  external: ['@actions/core'],
 })
