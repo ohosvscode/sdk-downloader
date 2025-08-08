@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
 import P from 'pino'
 import pretty from 'pino-pretty'
@@ -19,7 +21,11 @@ function isLogType(logType: string): logType is 'explicit' | 'full' | 'silent' {
   return ['explicit', 'full', 'silent'].includes(logType)
 }
 
-export async function runCommandLineDownload(options: DownloadCommandLineOptions): Promise<void> {
+export interface RunCommandLineDownloadResult {
+  logger: P.Logger
+}
+
+export async function runCommandLineDownload(options: DownloadCommandLineOptions): Promise<RunCommandLineDownloadResult> {
   if (!options.apiVersion || !options.arch || !options.os) {
     throw new CliError('Please provide --api-version, --arch, and --os options.', options)
   }
@@ -91,4 +97,14 @@ export async function runCommandLineDownload(options: DownloadCommandLineOptions
   logger.info(`SDK extracted successfully, cleanup...`)
   await downloader.clean()
   logger.info(`Cleanup completed, SDK is ready in ${options.targetDir}.`)
+
+  // Log the sdk directory structure
+  logger.info(`SDK directory structure:`)
+  const sdkDir = path.resolve(options.targetDir)
+  const sdkDirContent = fs.readdirSync(sdkDir)
+  logger.info(sdkDirContent.map(item => path.resolve(sdkDir, item)).join('|-\n'))
+
+  return {
+    logger,
+  }
 }

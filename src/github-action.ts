@@ -8,10 +8,10 @@ async function run(): Promise<void> {
   const version = core.getInput('version', { required: true }) as keyof typeof SdkVersion
   const archInput = core.getInput('arch', { required: false }) || 'X86'
   const osInput = core.getInput('os', { required: false }) || 'Linux'
-  const cacheDir = core.getInput('cache-dir', { required: false }) || '.cache/sdk'
-  const targetDir = core.getInput('target-dir', { required: false }) || 'sdk'
-  const logType = core.getInput('log-type', { required: false }) || 'explicit'
-  const logTimeout = Number.parseInt(core.getInput('log-timeout', { required: false }) || '5000', 10)
+  const cacheDir = core.getInput('cache_dir', { required: false }) || '.cache/sdk'
+  const targetDir = core.getInput('target_dir', { required: false }) || 'sdk'
+  const logType = core.getInput('log_type', { required: false }) || 'explicit'
+  const logTimeout = Number.parseInt(core.getInput('log_timeout', { required: false }) || '5000', 10)
 
   // 转换字符串输入为枚举值（保持原始大小写）
   const arch = archInput.toLowerCase() === 'arm' ? SdkArch.ARM : SdkArch.X86
