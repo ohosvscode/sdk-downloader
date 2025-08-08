@@ -39,4 +39,4 @@ jobs:
           os: Linux
 
       - name: Show results
-        run: 'echo "Explicit test SDK path: ${{ steps.testing.outputs.sdkPath }}'
+        run: 'echo "Explicit test SDK path: ${{ steps.testing.outputs.sdkPath }}"'
