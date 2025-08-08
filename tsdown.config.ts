@@ -5,5 +5,5 @@ export default defineConfig({
   sourcemap: true,
   dts: true,
   format: ['esm', 'cjs'],
-  external: ['@actions/core'],
+  external: ['@actions/core', '@actions/cache'],
 })

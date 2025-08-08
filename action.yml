@@ -37,6 +37,10 @@ inputs:
     description: 'Timeout for log output in milliseconds, default is 5000ms'
     required: false
     default: '5000'
+  cache:
+    description: Whether to cache the downloaded SDK, default is `true`
+    required: false
+    default: 'true'
 outputs:
   sdkPath:
     description: Path to the extracted SDK

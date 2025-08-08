@@ -1,5 +1,6 @@
 import type { SdkVersion } from './enums/sdk'
 import path from 'node:path'
+import * as cache from '@actions/cache'
 import * as core from '@actions/core'
 import { runCommandLineDownload } from './command-line'
 import { SdkArch, SdkOS } from './enums/sdk'
@@ -13,6 +14,7 @@ async function run(): Promise<void> {
   const targetDir = core.getInput('target_dir', { required: false }) || 'sdk'
   const logType = core.getInput('log_type', { required: false }) || 'explicit'
   const logTimeout = Number.parseInt(core.getInput('log_timeout', { required: false }) || '5000', 10)
+  const isCache = core.getBooleanInput('cache', { required: false })
 
   // 转换字符串输入为枚举值（保持原始大小写）
   const arch = archInput.toLowerCase() === 'arm' ? SdkArch.ARM : SdkArch.X86
@@ -22,7 +24,15 @@ async function run(): Promise<void> {
       ? SdkOS.Windows
       : SdkOS.Linux
 
-  await runCommandLineDownload({
+  const cacheKey = `ohos-sdk-${version}-${arch}-${os}`
+  const cacheHit = await cache.restoreCache([path.resolve(targetDir)], cacheKey)
+  if (cacheHit) {
+    console.warn(`Cache hit: ${cacheHit}, skipping download...`)
+    core.setOutput('sdkPath', path.resolve(targetDir))
+    return
+  }
+
+  const { logger } = await runCommandLineDownload({
     apiVersion: version,
     arch: SdkArch[arch] as keyof typeof SdkArch,
     os: SdkOS[os] as keyof typeof SdkOS,
@@ -32,6 +42,11 @@ async function run(): Promise<void> {
     logTimeout,
   })
 
+  if (isCache) {
+    logger.info(`Download & extract successfully, saving cache to ${cacheKey}...`)
+    const cacheId = await cache.saveCache([path.resolve(targetDir)], cacheKey)
+    logger.info(`Cache saved with id: ${cacheId}.`)
+  }
   core.setOutput('sdkPath', path.resolve(targetDir))
 }
 
