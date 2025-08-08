@@ -10,7 +10,7 @@ function isLogType(logType: string): logType is 'explicit' | 'full' | 'silent' {
 async function run(): Promise<void> {
   try {
     // 获取输入参数
-    const version = core.getInput('version', { required: true }) as SdkVersion
+    const version = core.getInput('version', { required: true }) as keyof typeof SdkVersion
     const archInput = core.getInput('arch', { required: false }) || 'X86'
     const osInput = core.getInput('os', { required: false }) || 'Linux'
     const cacheDir = core.getInput('cache-dir', { required: false }) || '.cache/sdk'
@@ -47,7 +47,7 @@ async function run(): Promise<void> {
 
     // 创建下载器
     const downloader = await createDownloader({
-      url: { version, arch, os },
+      url: { version: SdkVersion[version], arch, os },
       cacheDir: absoluteCacheDir,
       targetDir: absoluteTargetDir,
       clean,

@@ -37,30 +37,6 @@ inputs:
 outputs:
   sdk-path:
     description: 'Path to the extracted SDK'
-    value: ${{ steps.download-sdk.outputs.sdk-path }}
 runs:
-  using: composite
-  steps:
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: latest
-        run_install: true
-        
-    - name: Install dependencies
-      shell: bash
-      run: pnpm install --frozen-lockfile
-      
-    - name: Build project
-      shell: bash
-      run: pnpm run build
-      
-    - name: Run SDK downloader
-      id: download-sdk
-      shell: bash
-      run: node dist/github-action.js
+  using: node20
+  main: dist/github-action.js
