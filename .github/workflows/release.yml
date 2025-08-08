@@ -35,7 +35,7 @@ jobs:
           run_install: true
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm i -g eslint && pnpm lint
 
       - name: Testing GitHub Action
         uses: ./
