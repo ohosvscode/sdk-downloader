@@ -45,8 +45,10 @@ jobs:
           arch: X86
           os: Linux
 
-      - name: Print Testing Action Result
-        run: 'echo "Testing Action Result: ${{ steps.testing-action.outputs.sdkPath }}"'
+      - name: Print & Delete Testing Action Result
+        run: |
+          echo "Testing Action Result: ${{ steps.testing-action.outputs.sdkPath }}"
+          rm -rf ${{ steps.testing-action.outputs.sdkPath }}
 
       - name: Create Release Pull Request
         id: changesets
