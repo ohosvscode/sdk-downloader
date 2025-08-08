@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.29
+
+### Patch Changes
+
+- 306bd82: feat: add caching by default
+
 ## 0.1.28
 
 ### Patch Changes
