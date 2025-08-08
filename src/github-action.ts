@@ -1,4 +1,5 @@
 import type { SdkVersion } from './enums/sdk'
+import path from 'node:path'
 import * as core from '@actions/core'
 import { runCommandLineDownload } from './command-line'
 import { SdkArch, SdkOS } from './enums/sdk'
@@ -30,6 +31,8 @@ async function run(): Promise<void> {
     logType: logType as 'explicit' | 'full' | 'silent',
     logTimeout,
   })
+
+  core.setOutput('sdkPath', path.resolve(targetDir))
 }
 
 // 运行 Action
