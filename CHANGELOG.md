@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.30
+
+### Patch Changes
+
+- 47988c1: feat: 更新最新版 API20 SDK
+
 ## 0.1.29
 
 ### Patch Changes
