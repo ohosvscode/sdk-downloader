@@ -71,32 +71,33 @@ export async function runCommandLineDownload(options: DownloadCommandLineOptions
   })
 
   if (options.logType === 'explicit') {
-    // 每隔 5 秒打印一次下载进度
-    let lastLogTime = 0
+    // 为每个事件类型维护独立的时间戳，避免不同事件类型的日志输出互相干扰
+    let lastDownloadProgressLogTime = 0
+    let lastZipExtractedLogTime = 0
+    let lastTarExtractedLogTime = 0
+
     downloader.on('download-progress', (progress) => {
       const now = Date.now()
-      if (now - lastLogTime >= options.logTimeout) { // 5000ms = 5秒
+      if (now - lastDownloadProgressLogTime >= options.logTimeout) {
         logger.info({
           ...progress,
           msg: `Percentage: ${progress.percentage.toFixed(2)}%, current speed: ${progress.network}${progress.unit}/s`,
         })
-        lastLogTime = now
+        lastDownloadProgressLogTime = now
       }
     })
     downloader.on('zip-extracted', (entry) => {
-      // 每隔 5 秒打印一次解压进度
       const now = Date.now()
-      if (now - lastLogTime >= options.logTimeout) {
+      if (now - lastZipExtractedLogTime >= options.logTimeout) {
         logger.info(entry, `Extracted file in zip: ${entry.path}...`)
-        lastLogTime = now
+        lastZipExtractedLogTime = now
       }
     })
     downloader.on('tar-extracted', (entry) => {
-      // 每隔 5 秒打印一次解压进度
       const now = Date.now()
-      if (now - lastLogTime >= options.logTimeout) { // 5000ms = 5秒
+      if (now - lastTarExtractedLogTime >= options.logTimeout) {
         logger.info(entry, `Extracted file in tar.gz: ${entry.path}...`)
-        lastLogTime = now
+        lastTarExtractedLogTime = now
       }
     })
   }
