@@ -185,6 +185,32 @@ function getUnixMode(externalFileAttributes: number): { mode: number, isSymlink:
   }
 }
 
+// 并发控制：限制同时进行的文件操作数量，避免 EMFILE 错误
+const MAX_CONCURRENT_FILES = 50
+
+/**
+ * 批量执行异步任务，限制并发数量
+ */
+async function runWithConcurrencyLimit<T>(
+  tasks: Array<() => Promise<T>>,
+  limit: number,
+): Promise<T[]> {
+  const results: T[] = []
+  let index = 0
+
+  async function runNext(): Promise<void> {
+    while (index < tasks.length) {
+      const currentIndex = index++
+      results[currentIndex] = await tasks[currentIndex]()
+    }
+  }
+
+  // 启动 limit 个并发执行器
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => runNext())
+  await Promise.all(workers)
+  return results
+}
+
 async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDir: string, emitter: Emitter<DownloadEventMap>): Promise<void> {
   // 在MacOS上解压直接解压到目标目录即可，linux和windows则需要找到对应的目录再解压
   const currentOS = process.platform === 'win32' ? 'windows' : process.platform === 'linux' ? 'linux' : undefined
@@ -203,71 +229,83 @@ async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDi
     // 使用 Open.file() API 来获取完整的 Central Directory 信息
     // 包括 externalFileAttributes（Unix 权限和符号链接信息）
     const directory = await unzipper.Open.file(filePath)
-    const writePromises: Promise<void>[] = []
     // 存储需要设置权限的文件（在所有文件写入完成后设置）
     const permissionsToSet: Array<{ path: string, mode: number }> = []
+
+    // 将文件处理封装为任务
+    const extractTasks: Array<() => Promise<void>> = []
 
     for (const file of directory.files) {
       const currentFilePath = path.join(resolvedOptions.targetDir, file.path)
       const { mode: unixPermissions, isSymlink } = getUnixMode(file.externalFileAttributes)
 
-      // 确保父目录存在
-      const parentDir = path.dirname(currentFilePath)
-      if (!fs.existsSync(parentDir)) {
-        fs.mkdirSync(parentDir, { recursive: true })
-      }
-
       if (isSymlink && isUnix) {
-        // 符号链接：文件内容就是链接目标路径
-        const targetPath = (await file.buffer()).toString('utf8')
-        // 如果符号链接已存在，先删除
-        if (fs.existsSync(currentFilePath)) {
-          fs.unlinkSync(currentFilePath)
-        }
-        fs.symlinkSync(targetPath, currentFilePath)
+        // 符号链接任务
+        extractTasks.push(async () => {
+          // 确保父目录存在
+          const parentDir = path.dirname(currentFilePath)
+          if (!fs.existsSync(parentDir)) {
+            fs.mkdirSync(parentDir, { recursive: true })
+          }
 
-        // 获取 entry 用于事件发射
-        const entry = file.stream()
-        await resolvedOptions.onZipExtracted?.(entry)
-        emitter.emit('zip-extracted', entry)
+          // 符号链接：文件内容就是链接目标路径
+          const targetPath = (await file.buffer()).toString('utf8')
+          // 如果符号链接已存在，先删除
+          if (fs.existsSync(currentFilePath)) {
+            fs.unlinkSync(currentFilePath)
+          }
+          fs.symlinkSync(targetPath, currentFilePath)
+        })
       }
       else if (file.type === 'Directory') {
+        // 目录可以直接同步创建，不需要限制并发
+        const parentDir = path.dirname(currentFilePath)
+        if (!fs.existsSync(parentDir)) {
+          fs.mkdirSync(parentDir, { recursive: true })
+        }
         if (!fs.existsSync(currentFilePath)) {
           fs.mkdirSync(currentFilePath, { recursive: true })
         }
-        // 设置目录权限
+        // 记录需要设置权限的目录
         if (isUnix && unixPermissions) {
           permissionsToSet.push({ path: currentFilePath, mode: unixPermissions })
         }
       }
       else if (file.type === 'File') {
-        // 普通文件
-        const entry = file.stream()
+        // 普通文件任务
+        extractTasks.push(async () => {
+          // 确保父目录存在
+          const parentDir = path.dirname(currentFilePath)
+          if (!fs.existsSync(parentDir)) {
+            fs.mkdirSync(parentDir, { recursive: true })
+          }
 
-        const writePromise = new Promise<void>((resolve, reject) => {
-          // 创建文件时设置初始权限（如果有的话）
-          const writeStream = fs.createWriteStream(currentFilePath, {
-            mode: isUnix && unixPermissions ? unixPermissions : 0o644,
+          const entry = file.stream()
+
+          await new Promise<void>((resolve, reject) => {
+            // 创建文件时设置初始权限（如果有的话）
+            const writeStream = fs.createWriteStream(currentFilePath, {
+              mode: isUnix && unixPermissions ? unixPermissions : 0o644,
+            })
+            writeStream.on('error', reject)
+            writeStream.on('finish', () => {
+              // 记录需要设置权限的文件（确保权限正确，特别是可执行文件）
+              if (isUnix && unixPermissions) {
+                permissionsToSet.push({ path: currentFilePath, mode: unixPermissions })
+              }
+              resolve()
+            })
+            entry.pipe(writeStream)
           })
-          writeStream.on('error', reject)
-          writeStream.on('finish', () => {
-            // 记录需要设置权限的文件（确保权限正确，特别是可执行文件）
-            if (isUnix && unixPermissions) {
-              permissionsToSet.push({ path: currentFilePath, mode: unixPermissions })
-            }
-            resolve()
-          })
-          entry.pipe(writeStream)
+
+          await resolvedOptions.onZipExtracted?.(entry)
+          emitter.emit('zip-extracted', entry)
         })
-        writePromises.push(writePromise)
-
-        await resolvedOptions.onZipExtracted?.(entry)
-        emitter.emit('zip-extracted', entry)
       }
     }
 
-    // 等待所有文件写入完成
-    await Promise.all(writePromises)
+    // 使用并发限制执行所有文件提取任务
+    await runWithConcurrencyLimit(extractTasks, MAX_CONCURRENT_FILES)
 
     // 设置文件权限（在所有文件写入完成后）
     for (const { path: filePath, mode } of permissionsToSet) {
@@ -285,7 +323,10 @@ async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDi
     fs.mkdirSync(resolvedOptions.targetDir, { recursive: true })
   }
 
-  await Promise.all(files.map(extractSingleZip))
+  // 串行处理每个 zip 文件，避免同时打开太多文件
+  for (const zipFile of files) {
+    await extractSingleZip(zipFile)
+  }
 }
 
 /**
