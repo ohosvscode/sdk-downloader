@@ -5,13 +5,13 @@
   "description": "Download and extract the ArkTS SDK.",
   "author": "Naily Zero <zero@naily.cc>",
   "license": "MIT",
-  "homepage": "https://github.com/groupguanfang/arkts-sdk-downloader#readme",
+  "homepage": "https://github.com/ohosvscode/sdk-downloader#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/groupguanfang/arkts-sdk-downloader.git"
+    "url": "https://github.com/ohosvscode/sdk-downloader.git"
   },
   "bugs": {
-    "url": "https://github.com/groupguanfang/arkts-sdk-downloader/issues"
+    "url": "https://github.com/ohosvscode/sdk-downloader/issues"
   },
   "keywords": [
     "arkts",
