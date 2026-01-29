@@ -216,10 +216,12 @@ async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDi
   const currentOS = process.platform === 'win32' ? 'windows' : process.platform === 'linux' ? 'linux' : undefined
   const isUnix = process.platform !== 'win32'
 
-  let files = fg.sync(path.join(extractedDir, '**', '*.zip'), {
+  // 使用 cwd 选项而不是将路径嵌入模式中，避免 Windows 上反斜杠导致的问题
+  let files = fg.sync('**/*.zip', {
+    cwd: extractedDir,
     onlyFiles: true,
     absolute: true,
-  }).filter(file => file.endsWith('.zip'))
+  })
 
   if (currentOS === 'linux' || currentOS === 'windows') {
     files = files.filter(filePath => filePath.includes(currentOS))
