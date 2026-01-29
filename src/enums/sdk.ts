@@ -6,7 +6,7 @@ export enum SdkVersion {
   API14 = '5.0.2',
   API15 = '5.0.3',
   API18 = '5.1.0',
-  API20 = '6.0.0-Beta1',
+  API20 = '6.0.0',
 }
 
 export enum SdkArch {
@@ -109,13 +109,13 @@ const urls: SdkUrlStorage = {
   },
   [SdkVersion.API20]: {
     [SdkArch.X86]: {
-      [SdkOS.MacOS]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0-Release/ohos-sdk-mac-public.tar.gz',
-      [SdkOS.Windows]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0-Release/ohos-sdk-windows_linux-public.tar.gz',
-      [SdkOS.Linux]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0-Release/ohos-sdk-windows_linux-public.tar.gz',
+      [SdkOS.MacOS]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0.0.1-Release/ohos-sdk-mac-public.tar.gz',
+      [SdkOS.Windows]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0.0.1-Release/ohos-sdk-windows_linux-public.tar.gz',
+      [SdkOS.Linux]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0.0.1-Release/ohos-sdk-windows_linux-public.tar.gz',
     },
     [SdkArch.ARM]: {
-      [SdkOS.MacOS]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0-Release/L2-SDK-MAC-M1-PUBLIC.tar.gz',
-      [SdkOS.Windows]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0-Release/ohos-sdk-windows_linux-public.tar.gz',
+      [SdkOS.MacOS]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0.0.1-Release/L2-SDK-MAC-M1-PUBLIC.tar.gz',
+      [SdkOS.Windows]: 'https://mirrors.huaweicloud.com/harmonyos/os/6.0.0.1-Release/ohos-sdk-windows_linux-public.tar.gz',
       [SdkOS.Linux]: null,
     },
   },
