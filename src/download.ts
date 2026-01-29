@@ -14,8 +14,6 @@ import { DownloadError } from './errors/download'
 import { type DownloadOptions, resolveDownloadOptions } from './options'
 import { makeRequest, makeSha256Request } from './request'
 
-function typeAssert<T>(_value: unknown): asserts _value is T {}
-
 function useDownloadProgress() {
   let lastTime = Date.now()
   let lastTransferred = 0
@@ -168,50 +166,158 @@ async function _extractTar(resolvedOptions: ResolvedDownloadOptions, extractedDi
   })
 }
 
+// Unix 文件类型常量
+const S_IFMT = 0o170000 // 文件类型掩码
+const S_IFLNK = 0o120000 // 符号链接
+
+/**
+ * 从 ZIP 的 externalFileAttributes 字段提取 Unix 权限信息
+ * Unix 权限存储在高 16 位
+ */
+function getUnixMode(externalFileAttributes: number): { mode: number, isSymlink: boolean } {
+  const unixMode = (externalFileAttributes >> 16) & 0xFFFF
+  const fileType = unixMode & S_IFMT
+  const permissions = unixMode & 0o7777
+
+  return {
+    mode: permissions,
+    isSymlink: fileType === S_IFLNK,
+  }
+}
+
+// 并发控制：限制同时进行的文件操作数量，避免 EMFILE 错误
+const MAX_CONCURRENT_FILES = 50
+
+/**
+ * 批量执行异步任务，限制并发数量
+ */
+async function runWithConcurrencyLimit<T>(
+  tasks: Array<() => Promise<T>>,
+  limit: number,
+): Promise<T[]> {
+  const results: T[] = []
+  let index = 0
+
+  async function runNext(): Promise<void> {
+    while (index < tasks.length) {
+      const currentIndex = index++
+      results[currentIndex] = await tasks[currentIndex]()
+    }
+  }
+
+  // 启动 limit 个并发执行器
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => runNext())
+  await Promise.all(workers)
+  return results
+}
+
 async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDir: string, emitter: Emitter<DownloadEventMap>): Promise<void> {
   // 在MacOS上解压直接解压到目标目录即可，linux和windows则需要找到对应的目录再解压
   const currentOS = process.platform === 'win32' ? 'windows' : process.platform === 'linux' ? 'linux' : undefined
+  const isUnix = process.platform !== 'win32'
 
-  let files = fg.sync(path.join(extractedDir, '**', '*.zip'), {
+  // 使用 cwd 选项而不是将路径嵌入模式中，避免 Windows 上反斜杠导致的问题
+  let files = fg.sync('**/*.zip', {
+    cwd: extractedDir,
     onlyFiles: true,
     absolute: true,
-  }).filter(file => file.endsWith('.zip'))
+  })
 
   if (currentOS === 'linux' || currentOS === 'windows') {
     files = files.filter(filePath => filePath.includes(currentOS))
   }
 
   async function extractSingleZip(filePath: string): Promise<void> {
-    const fileReadStream = fs.createReadStream(filePath).pipe(unzipper.Parse({ forceStream: true }))
-    const writePromises: Promise<void>[] = []
+    // 使用 Open.file() API 来获取完整的 Central Directory 信息
+    // 包括 externalFileAttributes（Unix 权限和符号链接信息）
+    const directory = await unzipper.Open.file(filePath)
+    // 存储需要设置权限的文件（在所有文件写入完成后设置）
+    const permissionsToSet: Array<{ path: string, mode: number }> = []
 
-    for await (const entry of fileReadStream) {
-      typeAssert<unzipper.Entry>(entry)
-      const currentFilePath = path.join(resolvedOptions.targetDir, entry.path)
+    // 将文件处理封装为任务
+    const extractTasks: Array<() => Promise<void>> = []
 
-      if (entry.type === 'File') {
-        if (!fs.existsSync(path.dirname(currentFilePath)))
-          fs.mkdirSync(path.dirname(currentFilePath), { recursive: true })
+    for (const file of directory.files) {
+      const currentFilePath = path.join(resolvedOptions.targetDir, file.path)
+      const { mode: unixPermissions, isSymlink } = getUnixMode(file.externalFileAttributes)
 
-        const writePromise = new Promise<void>((resolve, reject) => {
-          const writeStream = fs.createWriteStream(currentFilePath)
-          writeStream.on('error', reject)
-          writeStream.on('finish', resolve)
-          entry.pipe(writeStream)
+      if (isSymlink && isUnix) {
+        // 符号链接任务
+        extractTasks.push(async () => {
+          // 确保父目录存在
+          const parentDir = path.dirname(currentFilePath)
+          if (!fs.existsSync(parentDir)) {
+            fs.mkdirSync(parentDir, { recursive: true })
+          }
+
+          // 符号链接：文件内容就是链接目标路径
+          const targetPath = (await file.buffer()).toString('utf8')
+          // 如果符号链接已存在，先删除
+          if (fs.existsSync(currentFilePath)) {
+            fs.unlinkSync(currentFilePath)
+          }
+          fs.symlinkSync(targetPath, currentFilePath)
         })
-        writePromises.push(writePromise)
-
-        await resolvedOptions.onZipExtracted?.(entry)
-        emitter.emit('zip-extracted', entry)
       }
-      else if (entry.type === 'Directory') {
-        if (!fs.existsSync(currentFilePath))
+      else if (file.type === 'Directory') {
+        // 目录可以直接同步创建，不需要限制并发
+        const parentDir = path.dirname(currentFilePath)
+        if (!fs.existsSync(parentDir)) {
+          fs.mkdirSync(parentDir, { recursive: true })
+        }
+        if (!fs.existsSync(currentFilePath)) {
           fs.mkdirSync(currentFilePath, { recursive: true })
+        }
+        // 记录需要设置权限的目录
+        if (isUnix && unixPermissions) {
+          permissionsToSet.push({ path: currentFilePath, mode: unixPermissions })
+        }
+      }
+      else if (file.type === 'File') {
+        // 普通文件任务
+        extractTasks.push(async () => {
+          // 确保父目录存在
+          const parentDir = path.dirname(currentFilePath)
+          if (!fs.existsSync(parentDir)) {
+            fs.mkdirSync(parentDir, { recursive: true })
+          }
+
+          const entry = file.stream()
+
+          await new Promise<void>((resolve, reject) => {
+            // 创建文件时设置初始权限（如果有的话）
+            const writeStream = fs.createWriteStream(currentFilePath, {
+              mode: isUnix && unixPermissions ? unixPermissions : 0o644,
+            })
+            writeStream.on('error', reject)
+            writeStream.on('finish', () => {
+              // 记录需要设置权限的文件（确保权限正确，特别是可执行文件）
+              if (isUnix && unixPermissions) {
+                permissionsToSet.push({ path: currentFilePath, mode: unixPermissions })
+              }
+              resolve()
+            })
+            entry.pipe(writeStream)
+          })
+
+          await resolvedOptions.onZipExtracted?.(entry)
+          emitter.emit('zip-extracted', entry)
+        })
       }
     }
 
-    // 等待所有文件写入完成
-    await Promise.all(writePromises)
+    // 使用并发限制执行所有文件提取任务
+    await runWithConcurrencyLimit(extractTasks, MAX_CONCURRENT_FILES)
+
+    // 设置文件权限（在所有文件写入完成后）
+    for (const { path: filePath, mode } of permissionsToSet) {
+      try {
+        fs.chmodSync(filePath, mode)
+      }
+      catch {
+        // 忽略权限设置失败（可能是某些特殊文件）
+      }
+    }
   }
 
   // 确保目标目录存在
@@ -219,7 +325,10 @@ async function _extractZip(resolvedOptions: ResolvedDownloadOptions, extractedDi
     fs.mkdirSync(resolvedOptions.targetDir, { recursive: true })
   }
 
-  await Promise.all(files.map(extractSingleZip))
+  // 串行处理每个 zip 文件，避免同时打开太多文件
+  for (const zipFile of files) {
+    await extractSingleZip(zipFile)
+  }
 }
 
 /**
