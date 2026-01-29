@@ -20,6 +20,74 @@ function getOS(): SdkOS {
     return SdkOS.Windows
 }
 
+/**
+ * 验证 Unix 权限和符号链接是否正确保留（issue #17）
+ */
+function verifyUnixPermissionsAndSymlinks(targetDir: string): {
+  executableFiles: string[]
+  symlinks: string[]
+  executableCount: number
+  symlinkCount: number
+} {
+  const isUnix = process.platform !== 'win32'
+  const executableFiles: string[] = []
+  const symlinks: string[] = []
+
+  if (!isUnix) {
+    console.warn('[验证跳过] Windows 系统不支持 Unix 权限和符号链接验证')
+    return { executableFiles, symlinks, executableCount: 0, symlinkCount: 0 }
+  }
+
+  // 查找所有文件
+  const allFiles = fg.sync('**/*', {
+    cwd: targetDir,
+    absolute: true,
+    onlyFiles: false,
+    followSymbolicLinks: false,
+  })
+
+  for (const filePath of allFiles) {
+    try {
+      const stats = fs.lstatSync(filePath)
+
+      // 检查符号链接
+      if (stats.isSymbolicLink()) {
+        const target = fs.readlinkSync(filePath)
+        symlinks.push(`${filePath} -> ${target}`)
+      }
+
+      // 检查可执行权限 (owner execute bit: 0o100)
+      if (stats.isFile() && (stats.mode & 0o100)) {
+        executableFiles.push(`${filePath} (mode: ${(stats.mode & 0o777).toString(8)})`)
+      }
+    }
+    catch {
+      // 忽略无法访问的文件
+    }
+  }
+
+  console.warn('\n========== Unix 权限和符号链接验证 (issue #17) ==========')
+  console.warn(`找到 ${executableFiles.length} 个可执行文件:`)
+  executableFiles.slice(0, 10).forEach(f => console.warn(`  - ${f}`))
+  if (executableFiles.length > 10) {
+    console.warn(`  ... 还有 ${executableFiles.length - 10} 个`)
+  }
+
+  console.warn(`\n找到 ${symlinks.length} 个符号链接:`)
+  symlinks.slice(0, 10).forEach(s => console.warn(`  - ${s}`))
+  if (symlinks.length > 10) {
+    console.warn(`  ... 还有 ${symlinks.length - 10} 个`)
+  }
+  console.warn('==========================================================\n')
+
+  return {
+    executableFiles,
+    symlinks,
+    executableCount: executableFiles.length,
+    symlinkCount: symlinks.length,
+  }
+}
+
 async function download(version: SdkVersion, expect: ExpectStatic): Promise<void> {
   const cacheDir = path.join(process.cwd(), 'target', '.cache', version)
   const targetDir = path.join(process.cwd(), 'target', 'download', version)
@@ -87,6 +155,29 @@ async function download(version: SdkVersion, expect: ExpectStatic): Promise<void
   }
 
   expect(fs.existsSync(targetDir)).toBe(true)
+
+  // 验证 Unix 权限和符号链接 (issue #17)
+  const verification = verifyUnixPermissionsAndSymlinks(targetDir)
+
+  // 在 Unix 系统上，native SDK 应该包含可执行文件
+  if (process.platform !== 'win32') {
+    // native SDK 中应该有可执行文件（如 llvm-ar, clang, hdc 等）
+    expect(verification.executableCount).toBeGreaterThan(0)
+    console.warn(`✓ 验证通过: 找到 ${verification.executableCount} 个可执行文件`)
+
+    // 符号链接验证（仅在 Linux 上强制要求，macOS SDK 可能不包含符号链接）
+    if (process.platform === 'linux') {
+      expect(verification.symlinkCount).toBeGreaterThan(0)
+      console.warn(`✓ 验证通过: 找到 ${verification.symlinkCount} 个符号链接`)
+    }
+    else if (verification.symlinkCount > 0) {
+      console.warn(`✓ 验证通过: 找到 ${verification.symlinkCount} 个符号链接`)
+    }
+    else {
+      console.warn(`ℹ 符号链接数量为 0（macOS SDK 可能不包含符号链接，这是正常的）`)
+    }
+  }
+
   await downloader.clean()
   expect(fs.existsSync(cacheDir)).toBe(false)
 }
