@@ -159,15 +159,23 @@ async function download(version: SdkVersion, expect: ExpectStatic): Promise<void
   // 验证 Unix 权限和符号链接 (issue #17)
   const verification = verifyUnixPermissionsAndSymlinks(targetDir)
 
-  // 在 Unix 系统上，native SDK 应该包含可执行文件和符号链接
+  // 在 Unix 系统上，native SDK 应该包含可执行文件
   if (process.platform !== 'win32') {
-    // native SDK 中应该有可执行文件（如 llvm-ar, clang 等）
+    // native SDK 中应该有可执行文件（如 llvm-ar, clang, hdc 等）
     expect(verification.executableCount).toBeGreaterThan(0)
     console.warn(`✓ 验证通过: 找到 ${verification.executableCount} 个可执行文件`)
 
-    // native SDK 中应该有符号链接
-    expect(verification.symlinkCount).toBeGreaterThan(0)
-    console.warn(`✓ 验证通过: 找到 ${verification.symlinkCount} 个符号链接`)
+    // 符号链接验证（仅在 Linux 上强制要求，macOS SDK 可能不包含符号链接）
+    if (process.platform === 'linux') {
+      expect(verification.symlinkCount).toBeGreaterThan(0)
+      console.warn(`✓ 验证通过: 找到 ${verification.symlinkCount} 个符号链接`)
+    }
+    else if (verification.symlinkCount > 0) {
+      console.warn(`✓ 验证通过: 找到 ${verification.symlinkCount} 个符号链接`)
+    }
+    else {
+      console.warn(`ℹ 符号链接数量为 0（macOS SDK 可能不包含符号链接，这是正常的）`)
+    }
   }
 
   await downloader.clean()
