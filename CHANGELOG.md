@@ -1,5 +1,11 @@
 # @arkts/sdk-downloader
 
+## 0.1.32
+
+### Patch Changes
+
+- efead90: fix: #17 and problem on Windows
+
 ## 0.1.31
 
 ### Patch Changes
